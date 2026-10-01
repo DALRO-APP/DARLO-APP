@@ -23,6 +23,7 @@ app/                       Expo Router 화면·레이아웃
   course/[id].tsx           상세
   run.tsx                  모의 러닝
 src/components/            공통 UI·마스코트·지도 공급자 경계
+src/maps/                  웹 카카오 SDK 로더와 타입
 src/domain/                API/GeoJSON 계약, 지리 계산, 목적·출발지 목록
 src/services/              mock/http repository, TanStack Query
 src/state/                 Zustand 입력·즐겨찾기·기록
@@ -41,7 +42,7 @@ pdf/                       원본 제안 발표와 대본 (수정 금지)
 - 화면에서 직접 fetch/공간 분석을 하지 않는다. 서버 데이터는 `CourseRepository`와 Query를 경유한다.
 - 입력과 로컬 즐겨찾기·시연 기록은 Zustand에 둔다. 서버 코스 원본을 별도 전역 상태에 복제하지 않는다.
 - mock/http는 동일 계약을 사용하며 HTTP 응답은 Zod로 검증한다. 서버 장애에서 몰래 mock으로 전환하지 않는다.
-- 지도 교체 시 `RouteMapProps`를 보존한다. 도식 지도와 모의 주행을 실제 카카오 지도/GPS로 표현하지 않는다.
+- 지도 교체 시 `RouteMapProps`를 보존한다. 웹 키 설정 시 카카오 배경을 사용하지만 더미 경로·모의 주행을 실제 추천/GPS로 표현하지 않는다. native는 도식 지도다.
 - GeoJSON은 EPSG:4326, 좌표는 `[경도, 위도]`, 거리는 m, 시간은 s, 경사는 %이다.
 - 도로 통합은 고정 `edge_id`와 원본 `network_version`으로 한다. 미측정은 null, 측정된 0은 0이다.
 - 환경 지표를 실제 안전 보장으로 표시하지 않는다. 더미 코스·모의 기록은 화면에 표시한다.

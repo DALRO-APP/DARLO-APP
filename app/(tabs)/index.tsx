@@ -164,8 +164,8 @@ export default function Home() {
             </View>
           </Glow>
           <T muted style={{ fontSize: 10, lineHeight: 17 }}>
-            시연 경로·환경 수치는 가상 데이터입니다. 실제 도로와 길 안내는
-            서버·지도 연결 후 제공됩니다.
+            시연 경로·환경 수치는 가상 데이터입니다. 실제 도로를 따르는 코스
+            추천은 서버·알고리즘 연결 후 제공됩니다.
           </T>
         </View>
         <View style={{ flex: wide ? 1 : undefined }}>

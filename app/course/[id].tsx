@@ -86,7 +86,7 @@ export default function CourseDetail() {
                   height={wide ? 400 : 290}
                 />
                 <T muted style={{ fontSize: 10, marginTop: 10 }}>
-                  시연 지도 · 실제 도로 탐색 결과가 아닙니다.
+                  시연 코스 · 실제 도로 탐색 결과가 아닙니다.
                 </T>
               </View>
               <View
