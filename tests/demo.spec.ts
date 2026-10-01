@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./kakao-fixture";
 test("조건 선택 → 코스 저장 → 모의 러닝 → 기록/후기 → 재시작 시 저장 유지", async ({
   page,
 }) => {

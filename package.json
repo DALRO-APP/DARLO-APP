@@ -15,8 +15,8 @@
     "check:harness": "node .codex/hooks/command-guard.test.cjs",
     "check": "npm run typecheck && npm run lint && npm test && npm run check:data && npm run check:harness",
     "export:web": "expo export --platform web",
-    "export:ios": "expo export --platform ios",
-    "export:android": "expo export --platform android"
+    "export:ios": "expo export --platform ios --output-dir dist/ios",
+    "export:android": "expo export --platform android --output-dir dist/android"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

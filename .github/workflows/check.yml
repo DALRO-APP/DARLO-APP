@@ -12,6 +12,8 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run export:web
+        env:
+          EXPO_PUBLIC_KAKAO_MAP_JS_KEY: test-key-for-mocked-sdk
       - run: npm run export:ios
       - run: npm run export:android
       - run: npx playwright install --with-deps chromium
