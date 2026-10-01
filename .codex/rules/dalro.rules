@@ -1,0 +1,8 @@
+# 로컬 구현·설치·검증은 사용자 요청에 포함됩니다.
+# 원격 변경과 변경을 버리는 명령에는 명시적인 요청이 필요합니다.
+prefix_rule(pattern = ["git", "push"], decision = "prompt", justification = "원격 저장소를 변경하므로 명시적인 push 요청이 필요합니다.")
+prefix_rule(pattern = ["git", "reset", "--hard"], decision = "forbidden", justification = "작업 변경을 버리는 명령입니다.")
+prefix_rule(pattern = ["git", "clean", ["-f", "-fd", "-df", "-fx", "-fdx"]], decision = "forbidden", justification = "미추적 작업 파일을 삭제합니다.")
+prefix_rule(pattern = ["git", "restore"], decision = "prompt", justification = "사용자 작업 변경을 되돌릴 수 있습니다.")
+prefix_rule(pattern = ["git", "checkout", "--"], decision = "prompt", justification = "사용자 작업 변경을 되돌릴 수 있습니다.")
+prefix_rule(pattern = ["npx", "eas-cli", ["build", "submit", "update"]], decision = "prompt", justification = "원격 빌드·배포는 요청한 경우에만 진행합니다.")

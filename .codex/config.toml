@@ -1,0 +1,4 @@
+# 로컬 Codex에서 프로젝트와 훅을 신뢰한 뒤 적용됩니다.
+# 사용자 전역 모델/권한/sandbox는 덮어쓰지 않습니다.
+[features]
+hooks = true

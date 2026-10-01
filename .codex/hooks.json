@@ -1,0 +1,14 @@
+{
+  "description": "DALRO local Codex shell guard; review and trust with /hooks.",
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/command-guard.cjs\"",
+        "timeout": 5,
+        "statusMessage": "DALRO 명령 안전성 확인"
+      }]
+    }]
+  }
+}
