@@ -1,0 +1,104 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.9745,
+            37.5178
+          ],
+          [
+            126.977,
+            37.5184
+          ]
+        ]
+      },
+      "properties": {
+        "edge_id": "ys-demo-1",
+        "from_node": "n0",
+        "to_node": "n1",
+        "length_m": 230,
+        "walkable": true,
+        "bidirectional": true,
+        "slope_pct": 0.8,
+        "elevation_gain_forward_m": 0,
+        "elevation_gain_reverse_m": 0,
+        "signal_cnt": 0,
+        "cross_cnt": 0,
+        "light_cnt": 4,
+        "park_dist_m": 35,
+        "green_ratio": 0.65,
+        "data_version": "example-only-v1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.977,
+            37.5184
+          ],
+          [
+            126.9775,
+            37.5202
+          ]
+        ]
+      },
+      "properties": {
+        "edge_id": "ys-demo-2",
+        "from_node": "n1",
+        "to_node": "n2",
+        "length_m": 205,
+        "walkable": true,
+        "bidirectional": true,
+        "slope_pct": 1.6,
+        "elevation_gain_forward_m": 2,
+        "elevation_gain_reverse_m": 1,
+        "signal_cnt": 1,
+        "cross_cnt": 1,
+        "light_cnt": 5,
+        "park_dist_m": 55,
+        "green_ratio": 0.65,
+        "data_version": "example-only-v1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.9775,
+            37.5202
+          ],
+          [
+            126.9745,
+            37.5178
+          ]
+        ]
+      },
+      "properties": {
+        "edge_id": "ys-demo-3",
+        "from_node": "n2",
+        "to_node": "n0",
+        "length_m": 376,
+        "walkable": true,
+        "bidirectional": true,
+        "slope_pct": 2.1,
+        "elevation_gain_forward_m": 4,
+        "elevation_gain_reverse_m": 2,
+        "signal_cnt": 0,
+        "cross_cnt": 0,
+        "light_cnt": null,
+        "park_dist_m": 75,
+        "green_ratio": 0.65,
+        "data_version": "example-only-v1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,396 @@
+{
+  "schema_version": "1.0",
+  "request_id": "example-request",
+  "courses": [
+    {
+      "id": "pace-ichon-5000-day-0",
+      "name": "한강 리듬 코스",
+      "subtitle": "강바람과 함께, 끊김 없이 달려요.",
+      "purpose": "PACE",
+      "region": "서울 용산구",
+      "start_label": "이촌 한강공원",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.9745,
+            37.5178
+          ],
+          [
+            126.978664890995,
+            37.51879103270393
+          ],
+          [
+            126.98491222748751,
+            37.51986465146653
+          ],
+          [
+            126.99220078672876,
+            37.5192865490559
+          ],
+          [
+            126.99636567772377,
+            37.521103442346444
+          ],
+          [
+            126.99896873459565,
+            37.52316809381297
+          ],
+          [
+            126.99532445497502,
+            37.52481981498619
+          ],
+          [
+            126.98907711848251,
+            37.52382878228226
+          ],
+          [
+            126.98282978199,
+            37.52308550775431
+          ],
+          [
+            126.97762366824625,
+            37.52192930293305
+          ],
+          [
+            126.9732505327015,
+            37.51969947934921
+          ],
+          [
+            126.9745,
+            37.5178
+          ]
+        ]
+      },
+      "summary": {
+        "distance_m": 5000,
+        "estimated_duration_s": 1860,
+        "elevation_gain_m": 12,
+        "avg_slope_pct": 0.7,
+        "signal_count": 2,
+        "crossing_count": 3,
+        "light_count": 38,
+        "green_ratio": 0.53,
+        "environment_score": 91
+      },
+      "reasons": [
+        {
+          "code": "flat",
+          "title": "평탄한 길 위주",
+          "description": "큰 오르막 없이 편안하게"
+        },
+        {
+          "code": "signals",
+          "title": "신호가 적은 길",
+          "description": "멈춤을 줄여 리듬을 이어가요"
+        },
+        {
+          "code": "loop",
+          "title": "출발지로 돌아오기",
+          "description": "달리기를 마치면 다시 제자리로"
+        },
+        {
+          "code": "lighting",
+          "title": "조명 정보 반영",
+          "description": "가로등 분포를 함께 살펴봐요"
+        }
+      ],
+      "segments": [
+        {
+          "id": "start",
+          "name": "이촌 한강공원",
+          "description": "가볍게 몸을 풀고 출발해요",
+          "distance_from_start_m": 0
+        },
+        {
+          "id": "one",
+          "name": "강변 산책로",
+          "description": "나만의 속도로 리듬을 찾아요",
+          "distance_from_start_m": 1250
+        },
+        {
+          "id": "two",
+          "name": "전망 쉼터",
+          "description": "호흡을 고르고 풍경을 즐겨요",
+          "distance_from_start_m": 2750
+        },
+        {
+          "id": "three",
+          "name": "돌아오는 길",
+          "description": "출발지를 향해 마지막 한 걸음",
+          "distance_from_start_m": 4000
+        },
+        {
+          "id": "finish",
+          "name": "이촌 한강공원",
+          "description": "오늘의 달리기를 마쳤어요",
+          "distance_from_start_m": 5000
+        }
+      ],
+      "edge_ids": [],
+      "data_version": "yongsan-demo-2026-10-01",
+      "algorithm_version": "mock-preset-v1",
+      "is_mock": true
+    },
+    {
+      "id": "green-ichon-5000-day-1",
+      "name": "초록 쉼표 코스",
+      "subtitle": "나무 그늘과 한강 사이에서 숨을 고르세요.",
+      "purpose": "GREEN",
+      "region": "서울 용산구",
+      "start_label": "이촌 한강공원",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.9745,
+            37.5178
+          ],
+          [
+            126.97328057101502,
+            37.521185225863796
+          ],
+          [
+            126.97596331478199,
+            37.52505405542242
+          ],
+          [
+            126.98242628840241,
+            37.52698847020174
+          ],
+          [
+            126.98425543187989,
+            37.531147461977255
+          ],
+          [
+            126.98913314781983,
+            37.53037369606553
+          ],
+          [
+            126.99279143477479,
+            37.52669830798484
+          ],
+          [
+            126.99096229129731,
+            37.52166882955863
+          ],
+          [
+            126.98547486086487,
+            37.52311964064311
+          ],
+          [
+            126.98206045970691,
+            37.52070162216897
+          ],
+          [
+            126.97718274376697,
+            37.519734414779315
+          ],
+          [
+            126.9745,
+            37.5178
+          ]
+        ]
+      },
+      "summary": {
+        "distance_m": 5200,
+        "estimated_duration_s": 1934,
+        "elevation_gain_m": 29,
+        "avg_slope_pct": 1.4,
+        "signal_count": 3,
+        "crossing_count": 4,
+        "light_count": 31,
+        "green_ratio": 0.88,
+        "environment_score": 87
+      },
+      "reasons": [
+        {
+          "code": "flat",
+          "title": "평탄한 길 위주",
+          "description": "큰 오르막 없이 편안하게"
+        },
+        {
+          "code": "green",
+          "title": "풍부한 녹지",
+          "description": "공원과 강변을 곁에 두고 달려요"
+        },
+        {
+          "code": "loop",
+          "title": "출발지로 돌아오기",
+          "description": "달리기를 마치면 다시 제자리로"
+        },
+        {
+          "code": "lighting",
+          "title": "조명 정보 반영",
+          "description": "가로등 분포를 함께 살펴봐요"
+        }
+      ],
+      "segments": [
+        {
+          "id": "start",
+          "name": "이촌 한강공원",
+          "description": "가볍게 몸을 풀고 출발해요",
+          "distance_from_start_m": 0
+        },
+        {
+          "id": "one",
+          "name": "강변 산책로",
+          "description": "나만의 속도로 리듬을 찾아요",
+          "distance_from_start_m": 1300
+        },
+        {
+          "id": "two",
+          "name": "초록 산책길",
+          "description": "호흡을 고르고 풍경을 즐겨요",
+          "distance_from_start_m": 2860
+        },
+        {
+          "id": "three",
+          "name": "돌아오는 길",
+          "description": "출발지를 향해 마지막 한 걸음",
+          "distance_from_start_m": 4160
+        },
+        {
+          "id": "finish",
+          "name": "이촌 한강공원",
+          "description": "오늘의 달리기를 마쳤어요",
+          "distance_from_start_m": 5200
+        }
+      ],
+      "edge_ids": [],
+      "data_version": "yongsan-demo-2026-10-01",
+      "algorithm_version": "mock-preset-v1",
+      "is_mock": true
+    },
+    {
+      "id": "night-ichon-5000-day-2",
+      "name": "빛을 따라 달로",
+      "subtitle": "밝은 산책로를 따라 즐기는 저녁 러닝.",
+      "purpose": "NIGHT",
+      "region": "서울 용산구",
+      "start_label": "이촌 한강공원",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            126.9745,
+            37.5178
+          ],
+          [
+            126.97776794578823,
+            37.518664005845984
+          ],
+          [
+            126.98234306989174,
+            37.51693599415402
+          ],
+          [
+            126.98778964620543,
+            37.51823200292299
+          ],
+          [
+            126.99083972894111,
+            37.521256023383934
+          ],
+          [
+            126.99301835946659,
+            37.52557605261384
+          ],
+          [
+            126.98975041367837,
+            37.5277360672288
+          ],
+          [
+            126.98484849499604,
+            37.52860007307478
+          ],
+          [
+            126.98212520683919,
+            37.52557605261384
+          ],
+          [
+            126.97798580884077,
+            37.52471204676786
+          ],
+          [
+            126.9728660271059,
+            37.52082402046094
+          ],
+          [
+            126.9745,
+            37.5178
+          ]
+        ]
+      },
+      "summary": {
+        "distance_m": 4800,
+        "estimated_duration_s": 1786,
+        "elevation_gain_m": 23,
+        "avg_slope_pct": 1.2,
+        "signal_count": 3,
+        "crossing_count": 4,
+        "light_count": 62,
+        "green_ratio": 0.46,
+        "environment_score": 94
+      },
+      "reasons": [
+        {
+          "code": "flat",
+          "title": "평탄한 길 위주",
+          "description": "큰 오르막 없이 편안하게"
+        },
+        {
+          "code": "signals",
+          "title": "신호가 적은 길",
+          "description": "멈춤을 줄여 리듬을 이어가요"
+        },
+        {
+          "code": "loop",
+          "title": "출발지로 돌아오기",
+          "description": "달리기를 마치면 다시 제자리로"
+        },
+        {
+          "code": "lighting",
+          "title": "조명 정보 반영",
+          "description": "가로등 분포를 함께 살펴봐요"
+        }
+      ],
+      "segments": [
+        {
+          "id": "start",
+          "name": "이촌 한강공원",
+          "description": "가볍게 몸을 풀고 출발해요",
+          "distance_from_start_m": 0
+        },
+        {
+          "id": "one",
+          "name": "강변 산책로",
+          "description": "나만의 속도로 리듬을 찾아요",
+          "distance_from_start_m": 1200
+        },
+        {
+          "id": "two",
+          "name": "전망 쉼터",
+          "description": "호흡을 고르고 풍경을 즐겨요",
+          "distance_from_start_m": 2640
+        },
+        {
+          "id": "three",
+          "name": "돌아오는 길",
+          "description": "출발지를 향해 마지막 한 걸음",
+          "distance_from_start_m": 3840
+        },
+        {
+          "id": "finish",
+          "name": "이촌 한강공원",
+          "description": "오늘의 달리기를 마쳤어요",
+          "distance_from_start_m": 4800
+        }
+      ],
+      "edge_ids": [],
+      "data_version": "yongsan-demo-2026-10-01",
+      "algorithm_version": "mock-preset-v1",
+      "is_mock": true
+    }
+  ]
+}

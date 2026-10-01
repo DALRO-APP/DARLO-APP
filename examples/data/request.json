@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "start": [
+    126.9745,
+    37.5178
+  ],
+  "target_distance_m": 5000,
+  "purpose": "PACE",
+  "time_of_day": "day",
+  "route_type": "loop",
+  "distance_tolerance_ratio": 0.1
+}

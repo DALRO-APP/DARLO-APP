@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "data_version": "example-only-v1",
+  "region": "서울 용산구",
+  "geometry_crs": "EPSG:4326",
+  "analysis_crs": "EPSG:5186",
+  "network_version": "example-base-v1",
+  "edge_count": 3,
+  "is_mock": true,
+  "created_at": "2026-10-01T12:00:00Z",
+  "contributors": [
+    "DALRO 예시"
+  ],
+  "sources": [
+    {
+      "layer": "roads",
+      "source": "synthetic-example",
+      "license": "예시 데이터",
+      "observed_at": null
+    }
+  ],
+  "processing": {
+    "signal_buffer_m": 15,
+    "light_buffer_m": 20,
+    "green_buffer_m": 30,
+    "dem_resolution_m": null,
+    "notes": "모든 수치와 geometry는 규격 설명용 예시. 실제 용산구 도로 자료가 아닙니다."
+  }
+}
