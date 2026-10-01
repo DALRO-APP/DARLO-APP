@@ -41,5 +41,5 @@ createServer(async (req, res) => {
     res.end();
   }
 }).listen(port, "127.0.0.1", () =>
-  console.log(`DALRO demo: http://127.0.0.1:${port}`),
+  console.log(`DALRO demo: http://localhost:${port}`),
 );

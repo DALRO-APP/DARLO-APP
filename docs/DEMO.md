@@ -15,7 +15,7 @@
 ```sh
 npm run export:web
 node scripts/serve-demo.mjs
-# http://127.0.0.1:4173
+# http://localhost:4173
 ```
 
 시연 서버는 로컬용입니다. 실제 웹 호스팅은 상세 URL 직접 진입을 위해 SPA fallback이 필요합니다.

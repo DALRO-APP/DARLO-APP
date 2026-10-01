@@ -9,9 +9,10 @@
 
    ```text
    http://localhost:8081
-   http://127.0.0.1:4173
    http://localhost:4173
    ```
+
+   시연 기본 주소는 `localhost`다. `http://127.0.0.1:4173`으로도 접속하려면 그 주소를 추가 등록한다. 같은 컴퓨터를 가리켜도 카카오는 다른 origin으로 판정한다.
 
 3. 앱의 카카오맵 → 사용 설정도 확인한다.
 4. git에서 제외된 `.env.local`에 다음 변수를 넣는다. 실제 키를 README나 소스에 넣지 않는다.
@@ -20,7 +21,7 @@
    EXPO_PUBLIC_KAKAO_MAP_JS_KEY=YOUR_JAVASCRIPT_KEY
    ```
 
-5. `npm run web`을 실행한다. 이미 실행 중인 Expo가 환경 변경을 반영하지 않으면 개발 서버를 다시 시작한다. 정적 빌드는 `npm run export:web` → `node scripts/serve-demo.mjs` → `http://127.0.0.1:4173`이다.
+5. `npm run web`을 실행한다. 이미 실행 중인 Expo가 환경 변경을 반영하지 않으면 개발 서버를 다시 시작한다. 정적 빌드는 `npm run export:web` → `node scripts/serve-demo.mjs` → `http://localhost:4173`이다.
 
 키가 비어 있으면 기존 도식 지도로 실행된다. 설정된 키의 SDK 요청이 실패하면 오류·현재 origin·재시도·사용자가 선택하는 도식 지도 버튼이 표시된다. 이를 실제 지도 성공으로 표시하지 않는다.
 
@@ -38,7 +39,9 @@ JavaScript 키는 브라우저가 사용하는 공개 앱 식별자다. 서버 �
 
 ## 확인 결과와 테스트 범위
 
-2026-10-01 전달받은 키를 로컬에서 공식 SDK에 요청했을 때 `http://127.0.0.1:4173`과 `http://localhost:8081`에서 HTTP 401 `AccessDeniedError: domain mismatched`가 확인되었다. 실제 키는 문서·테스트·커밋에 포함하지 않았다. 브라우저의 `ERR_BLOCKED_BY_ORB`는 이 실패 요청에서 관측되었으며 앱의 TypeScript 오류로 판정하지 않았다. 허용 도메인 등록 후 실제 타일 렌더링을 재확인해야 한다.
+2026-10-01 도메인 등록 전 공식 SDK 요청은 HTTP 401 `AccessDeniedError: domain mismatched`로 실패했다. 사용자가 `localhost:8081`, `localhost:4173`을 등록한 뒤 두 주소에서 SDK HTTP 200, 앱 지도 상태 `ready`, 실제 타일 이미지 로드와 Polyline 표시를 Chrome 모바일 크기에서 확인했다. `127.0.0.1:4173`은 별도 등록되지 않아 여전히 같은 401로 실패하므로 기본 시연 주소를 `localhost`로 통일했다.
+
+실제 키는 문서·테스트·커밋에 포함하지 않았다. 브라우저의 `ERR_BLOCKED_BY_ORB`는 초기 실패 요청에서 관측되었으며 앱의 TypeScript 오류로 판정하지 않았다. 실제 확인과 아래 SDK 모사 테스트 결과는 구분한다.
 
 Playwright는 공식 SDK 요청을 테스트용 응답으로 대체해 좌표 순서·경로 갱신·SDK 실패 후 재시도·도식 지도 전환을 검사한다. 이 자동 검사는 실제 키의 권한·카카오 타일 서버 정상 여부를 증명하지 않는다. CI 웹 export에는 테스트용 문자열 키를 사용하며 외부 카카오 호출이 발생하지 않도록 요청을 가로챈다.
 
