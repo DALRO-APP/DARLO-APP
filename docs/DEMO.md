@@ -1,6 +1,6 @@
 # DALRO 시연 가이드
 
-1. `npm ci` → `npm run web` 또는 `npm start`. SDK 57 호환 Expo Go/개발 빌드를 사용합니다.
+1. `npm ci` → `npm run web` 또는 `npm run start:go`. 실제 native 카카오 지도는 [개발 앱 설치 가이드](NATIVE-MAPS.md)를 따른 뒤 `npm run start:dev`로 엽니다. Native 키가 설정된 Expo Go에서는 지도 설치 안내의 `시연 지도 보기`로 더미 시연을 계속할 수 있습니다.
 2. 홈의 출발지 변경에서 이촌·남산·용산가족공원을 선택합니다.
 3. 3/5/8km, PACE/POWER/NIGHT/GREEN, 주야간을 바꿉니다. 후보·지도·거리가 변경됩니다.
 4. 지도/카드에서 코스를 고르고 상세의 환경/이유/구간을 설명합니다. 하트로 저장합니다.
