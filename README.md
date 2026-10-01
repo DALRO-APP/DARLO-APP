@@ -1,1 +1,35 @@
-# DARLO-APP
+# DALRO
+
+오늘도, 더 좋은 길로. 용산구 공간정보 기반 맞춤 러닝 코스 앱의 **더미 데이터 시연 프론트엔드**입니다.
+
+Expo SDK 57 · React Native · TypeScript · Expo Router · Zustand · TanStack Query
+
+```sh
+npm ci
+npm run web     # 브라우저에서 바로 시연
+npm start       # SDK 57 호환 Expo Go/개발 빌드
+```
+
+Node 22.14 이상을 사용하세요. 지도 키·서버·로그인이 필요하지 않습니다. 출발지, 3/5/8km, 목적, 주야간을 바꾸고 코스 상세 → 모의 러닝 → 기록/후기까지 눌러볼 수 있습니다. 조건·저장 코스·완료 기록은 기기에 보관합니다.
+
+- [발표 시연 순서](docs/DEMO.md)
+- [팀원 데이터 전달 규격](docs/TEAM-DATA-HANDOFF.md)
+- [자료 예시](examples/data/) · [JSON Schema](docs/contracts/)
+- [설계 결정과 후속 작업](docs/2026-10-01-app-skeleton.md)
+- [작업 규칙](AGENTS.md) · [훅 활성화/한계](docs/harness.md)
+
+지도/경로/환경 수치는 가상이며 실제 길 탐색·GPS 측정은 아직 연결하지 않았습니다. 검정/라임과 마스코트를 SVG 코드로 구성했습니다. 서버와 PostGIS는 이 저장소에 포함하지 않습니다.
+
+서버 연결은 `.env.example`을 참고해 `EXPO_PUBLIC_DATA_SOURCE=http`, `EXPO_PUBLIC_API_URL`을 지정합니다. repository가 `POST /v1/courses/recommendations`, `GET /v1/courses/{id}`를 호출하고 Zod 계약으로 응답을 검증합니다. 이 엔드포인트는 팀 합의용 제안이고 실제 서버가 필요합니다. `RouteMapProps`로 카카오 지도 공급자를 교체할 수 있습니다.
+
+```sh
+npm run check
+npx expo install --check
+npm run export:web
+npm run export:ios
+npm run export:android
+npx playwright install chromium
+npx playwright test
+```
+
+Playwright는 웹 export 후 실행합니다. macOS에 설치된 Chrome을 쓰려면 `PLAYWRIGHT_CHROME=1 npx playwright test`를 실행할 수 있습니다. native export는 JS 번들 검사이며 APK/IPA 빌드·실기 테스트와 다릅니다. GitHub Actions에서도 위 검사를 실행합니다.

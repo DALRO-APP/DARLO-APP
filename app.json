@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "DALRO",
+    "slug": "dalro",
+    "scheme": "dalro",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "com.dalro.app" },
+    "android": { "package": "com.dalro.app" },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "DALRO · 오늘도, 더 좋은 길로"
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}
