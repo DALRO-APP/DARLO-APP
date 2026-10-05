@@ -19,3 +19,16 @@ node scripts/serve-demo.mjs
 ```
 
 시연 서버는 로컬용입니다. 실제 웹 호스팅은 상세 URL 직접 진입을 위해 SPA fallback이 필요합니다.
+
+## Vercel 시연 배포
+
+루트의 `vercel.json`은 더미 데이터로 웹 빌드하고 `dist/`를 배포합니다. 상세 URL 직접 진입과 새로고침은 SPA rewrite로 처리합니다. [Expo 공식 Vercel 배포 가이드](https://docs.expo.dev/guides/publishing-websites/#vercel)를 따릅니다.
+
+- Vercel에서 저장소를 가져오고 Framework Preset은 `Other`, Root Directory는 저장소 루트(`./`)로 둡니다. 설치·빌드 명령과 출력 폴더는 `vercel.json`에 지정되어 있습니다.
+- 현재 `package.json`의 Node.js 범위는 `>=22.14.0`이므로 Vercel에서는 기본 `24.x`를 사용할 수 있습니다. 로컬 웹 검증은 `22.14.0`에서 했습니다. `22.x`로 고정하려면 `package.json`의 engines 범위도 함께 변경해야 합니다. [Vercel Node.js 버전 규칙](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)을 참고하세요.
+- 로컬에서 배포하려면 프로젝트 루트에서 `npx vercel`을 실행하고 계정·프로젝트를 연결합니다.
+- 키 없이도 도식 지도로 시연할 수 있습니다. 카카오 지도를 쓰려면 Vercel 환경 변수에 `EXPO_PUBLIC_KAKAO_MAP_JS_KEY`를 설정하고 배포 도메인을 카카오에 등록한 뒤 다시 빌드합니다. 자세한 설정은 [카카오 지도 가이드](KAKAO-MAPS.md)를 참고하세요.
+- 로컬 빌드: `EXPO_PUBLIC_DATA_SOURCE=mock npm run export:web`. 확인: `node scripts/serve-demo.mjs` → `http://localhost:4173`.
+
+`dist/`는 Git에 넣지 않습니다. 저장소를 통한 배포에서는 Vercel이 다시 빌드합니다.
+Git 연동 배포는 원격 저장소의 커밋을 사용하므로 로컬 커밋 후 해당 브랜치에 push해야 변경된 `vercel.json`이 반영됩니다.
