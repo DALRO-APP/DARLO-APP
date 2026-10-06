@@ -1,6 +1,6 @@
 # DALRO 데이터 전달 규격 — 팀원 공유용
 
-> 2026-10-01 · 초안 v1.0 · 1차 지역: 서울 용산구
+> 2026-10-01 · 초안 v1.0 · 2026-10-06 Loop/Straight 확장 · 1차 지역: 서울 용산구
 >
 > 서버와 추천 코스를 앱에 연결하기 위한 공통 규격 제안입니다. 현재 앱은 더미로 동작합니다. 아래 컬럼과 단위는 **새로 제안하는 계약**이며 노션 실제 파일을 검사한 결과가 아닙니다. 카톡에서 `seoul_running_roads_ready.shp`, `signal_cnt`, `cross_cnt`를 확인했습니다.
 
@@ -89,7 +89,9 @@ yongsan-running-v1/
 }
 ```
 
-UI는 3/5/8km를 제공합니다. 계약은 1~20km이고 실제 알고리즘 지원 범위는 서버에서 검증합니다. 목적은 PACE/POWER/NIGHT/GREEN, 시간 조건은 day/night입니다. 야간 PACE면 평탄함과 조명을 함께 반영하므로 목적과 시간 조건을 구분합니다.
+UI는 3/5/7/10km와 직접 입력(1~20km)을 제공합니다. 기존 8km 조건은 직접 입력으로 복원합니다. 계약은 1~20km이고 실제 알고리즘 지원 범위는 서버에서 검증합니다. 목적은 PACE/POWER/NIGHT/GREEN, 시간 조건은 day/night입니다. 야간 PACE면 평탄함과 조명을 함께 반영하므로 목적과 시간 조건을 구분합니다. 홈에서 NIGHT를 고르면 야간으로 시작하며 설정에서 바꿀 수 있습니다. mock은 선택 목적의 후보 세 개를 반환하지만 HTTP 응답은 기존 0~3개 계약을 유지합니다.
+
+Straight 요청은 `route_type: "straight"`, `end: [경도, 위도]`, `target_distance_m: null`을 보냅니다. 두 장소는 50m 이상 떨어져 있어야 하며, 목적지까지의 거리와 시간은 응답 geometry에서 계산합니다. 사용자에게 거리 선택을 추가로 받지 않습니다. Loop 요청 형식은 유지합니다. 예시: [request-straight.json](../examples/data/request-straight.json), [recommendations-straight.json](../examples/data/recommendations-straight.json). HTTP 서버도 두 방식을 지원하도록 확장해야 하며 지원하지 않으면 오류를 표시합니다. mock으로 몰래 전환하지 않습니다.
 
 출발점을 보행 도로/노드로 스냅하되 원래 위치에서 50m 이내를 기본값으로 제안합니다. 불가능하면 임의로 먼 곳으로 이동하지 말고 오류나 대안 출발점을 반환합니다.
 
@@ -101,15 +103,16 @@ UI는 3/5/8km를 제공합니다. 계약은 1~20km이고 실제 알고리즘 지
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 최상위       | schema_version="1.0", request_id, courses(0~3개, 추천 순서)                                                                                  |
 | 기본         | id, name, subtitle, purpose, region, start_label                                                                                             |
+| 방식/목적지 | route_type=loop/straight. 기존 응답의 누락은 loop로 호환. Straight는 end=[lon,lat], end_label 필수 |
 | geometry     | LineString, [lon,lat] 최소 4점. 실제 도로 순서대로 이어진 경로                                                                               |
 | summary      | distance_m, estimated_duration_s, elevation_gain_m, avg_slope_pct, signal_count, crossing_count, light_count, green_ratio, environment_score |
 | summary 결측 | 거리/시간 필수 양수. 나머지는 null 가능. environment_score는 0~100 환경 지표이며 안전 보장 아님                                              |
-| reasons      | code, title, description. code=flat/hill/lighting/green/signals/loop                                                                         |
+| reasons      | code, title, description. code=flat/hill/lighting/green/signals/loop/destination                                                                         |
 | segments     | id, name, description, distance_from_start_m. 시작·주요 구간·도착 누적 거리 오름차순                                                         |
 | edge_ids     | 실제 방문 순서. 왕복/반복 ID 허용, 서버가 방향을 추적                                                                                        |
 | 출처         | data_version, algorithm_version, is_mock                                                                                                     |
 
-거리 오차는 입력 ±10%를 초기 제안으로 둡니다. geometry 길이와 summary도 일치해야 합니다. 검사기의 15% 길이 임계값은 잘못된 파일을 찾는 임시 허용치이며 실제 목표 품질은 2% 이내입니다. 출발/도착 20m 이내 회귀, 요청 위치에서 50m 이내 출발을 검사합니다.
+Loop 거리 오차는 입력 ±10%를 초기 제안으로 둡니다. Straight는 자동 거리이므로 목표 거리 허용오차 검사를 하지 않습니다. geometry 길이와 summary도 일치해야 합니다. 검사기의 15% 길이 임계값은 잘못된 파일을 찾는 임시 허용치이며 실제 목표 품질은 2% 이내입니다. Loop는 출발/도착 20m 이내 회귀를 검사합니다. Straight는 경로 끝점이 응답 end의 20m 이내이며 출발/끝점은 50m 이상 떨어져야 합니다. 모든 추천은 요청 위치에서 50m 이내 출발, Straight는 요청 목적지에서 50m 이내 도착을 검사합니다.
 
 상세는 `GET /v1/courses/{id}`가 같은 Course 객체를 반환하는 안입니다. ID는 앱 새로고침/서버 재시작에도 조회 가능하게 하고 발급·보관 기간을 결정해 주세요. 서버는 아직 구현하지 않았습니다.
 
@@ -134,7 +137,7 @@ node --import tsx scripts/validate-data.ts /전달폴더/경로
 # 이 레포의 예시는 npm run check:data
 ```
 
-4개 자료의 필수 필드·단위·버전·행 수, 중복 edge/node 좌표, 도로/코스 길이, 코스 ID, 출발·회귀·거리 허용오차와 edge 참조를 검사합니다. JSON Schema만으로 연결/회귀 같은 교차 필드 규칙을 검사할 수 없으므로 실행 검사도 필요합니다.
+기본 4개 자료와 Straight 요청/추천 예시 쌍(있을 때)의 필수 필드·단위·버전·행 수, 중복 edge/node 좌표, 도로/코스 길이, 코스 ID, 출발·회귀·거리 허용오차와 edge 참조를 검사합니다. JSON Schema만으로 연결/회귀 같은 교차 필드 규칙을 검사할 수 없으므로 실행 검사도 필요합니다.
 
 `quality-report.md`에는 추가로 아래를 기록합니다. 자동 검사 통과만으로 실제로 뛸 수 있는 코스라고 판단하지 않습니다.
 

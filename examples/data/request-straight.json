@@ -7,6 +7,10 @@
   "purpose": "PACE",
   "time_of_day": "day",
   "distance_tolerance_ratio": 0.1,
-  "route_type": "loop",
-  "target_distance_m": 5000
+  "route_type": "straight",
+  "end": [
+    126.9845,
+    37.5223
+  ],
+  "target_distance_m": null
 }

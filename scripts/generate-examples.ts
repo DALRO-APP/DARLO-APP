@@ -24,8 +24,8 @@ const request = recommendationRequestSchema.parse({
 const response = recommendationResponseSchema.parse({
   schema_version: "1.0",
   request_id: "example-request",
-  courses: ["PACE", "GREEN", "NIGHT"].map((purpose, i) =>
-    makeMockCourse(request, purpose as "PACE" | "GREEN" | "NIGHT", i),
+  courses: [0, 1, 2].map((rank) =>
+    makeMockCourse(request, request.purpose, rank),
   ),
 });
 const nodes: Position[] = [
@@ -36,32 +36,47 @@ const nodes: Position[] = [
 ];
 const roads = roadNetworkSchema.parse({
   type: "FeatureCollection",
-  features: nodes
-    .slice(0, -1)
-    .map((point, i) => ({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates: [point, nodes[i + 1]] },
-      properties: {
-        edge_id: `ys-demo-${i + 1}`,
-        from_node: `n${i}`,
-        to_node: `n${(i + 1) % 3}`,
-        length_m: Math.round(lineDistance([point, nodes[i + 1]!])),
-        walkable: true,
-        bidirectional: true,
-        slope_pct: [0.8, 1.6, 2.1][i],
-        elevation_gain_forward_m: i * 2,
-        elevation_gain_reverse_m: i,
-        signal_cnt: i === 1 ? 1 : 0,
-        cross_cnt: i === 1 ? 1 : 0,
-        light_cnt: i === 2 ? null : 4 + i,
-        park_dist_m: 35 + i * 20,
-        green_ratio: 0.65,
-        data_version: "example-only-v1",
-      },
-    })),
+  features: nodes.slice(0, -1).map((point, i) => ({
+    type: "Feature",
+    geometry: { type: "LineString", coordinates: [point, nodes[i + 1]] },
+    properties: {
+      edge_id: `ys-demo-${i + 1}`,
+      from_node: `n${i}`,
+      to_node: `n${(i + 1) % 3}`,
+      length_m: Math.round(lineDistance([point, nodes[i + 1]!])),
+      walkable: true,
+      bidirectional: true,
+      slope_pct: [0.8, 1.6, 2.1][i],
+      elevation_gain_forward_m: i * 2,
+      elevation_gain_reverse_m: i,
+      signal_cnt: i === 1 ? 1 : 0,
+      cross_cnt: i === 1 ? 1 : 0,
+      light_cnt: i === 2 ? null : 4 + i,
+      park_dist_m: 35 + i * 20,
+      green_ratio: 0.65,
+      data_version: "example-only-v1",
+    },
+  })),
 });
 write("request.json", request);
 write("recommendations.json", response);
+const straight = recommendationRequestSchema.parse({
+  ...request,
+  route_type: "straight",
+  end: [126.9845, 37.5223],
+  target_distance_m: null,
+});
+write("request-straight.json", straight);
+write(
+  "recommendations-straight.json",
+  recommendationResponseSchema.parse({
+    schema_version: "1.0",
+    request_id: "example-straight-request",
+    courses: [0, 1, 2].map((rank) =>
+      makeMockCourse(straight, straight.purpose, rank),
+    ),
+  }),
+);
 write("roads.geojson", roads);
 write("manifest.json", {
   schema_version: "1.0",

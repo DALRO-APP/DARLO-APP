@@ -1,60 +1,140 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "1.0"
-    },
-    "start": {
-      "type": "array",
-      "prefixItems": [
-        {
-          "type": "number",
-          "minimum": -180,
-          "maximum": 180
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0"
         },
-        {
+        "start": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "purpose": {
+          "type": "string",
+          "enum": ["PACE", "POWER", "NIGHT", "GREEN"]
+        },
+        "time_of_day": {
+          "type": "string",
+          "enum": ["day", "night"]
+        },
+        "distance_tolerance_ratio": {
           "type": "number",
-          "minimum": -90,
-          "maximum": 90
+          "minimum": 0,
+          "maximum": 0.3
+        },
+        "route_type": {
+          "type": "string",
+          "const": "loop"
+        },
+        "target_distance_m": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 20000
         }
+      },
+      "required": [
+        "schema_version",
+        "start",
+        "purpose",
+        "time_of_day",
+        "distance_tolerance_ratio",
+        "route_type",
+        "target_distance_m"
       ],
-      "items": false,
-      "minItems": 2,
-      "maxItems": 2
+      "additionalProperties": false
     },
-    "target_distance_m": {
-      "type": "integer",
-      "minimum": 1000,
-      "maximum": 20000
-    },
-    "purpose": {
-      "type": "string",
-      "enum": ["PACE", "POWER", "NIGHT", "GREEN"]
-    },
-    "time_of_day": {
-      "type": "string",
-      "enum": ["day", "night"]
-    },
-    "route_type": {
-      "type": "string",
-      "const": "loop"
-    },
-    "distance_tolerance_ratio": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 0.3
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "1.0"
+        },
+        "start": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "purpose": {
+          "type": "string",
+          "enum": ["PACE", "POWER", "NIGHT", "GREEN"]
+        },
+        "time_of_day": {
+          "type": "string",
+          "enum": ["day", "night"]
+        },
+        "distance_tolerance_ratio": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.3
+        },
+        "route_type": {
+          "type": "string",
+          "const": "straight"
+        },
+        "end": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "target_distance_m": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "schema_version",
+        "start",
+        "purpose",
+        "time_of_day",
+        "distance_tolerance_ratio",
+        "route_type",
+        "end",
+        "target_distance_m"
+      ],
+      "additionalProperties": false
     }
-  },
-  "required": [
-    "schema_version",
-    "start",
-    "target_distance_m",
-    "purpose",
-    "time_of_day",
-    "route_type",
-    "distance_tolerance_ratio"
-  ],
-  "additionalProperties": false
+  ]
 }
