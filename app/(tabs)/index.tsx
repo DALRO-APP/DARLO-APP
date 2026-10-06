@@ -1,230 +1,298 @@
 import { router } from "expo-router";
-import { useState } from "react";
-import { ActivityIndicator, View } from "react-native";
-import { Conditions } from "../../src/components/Conditions";
-import { CourseCard } from "../../src/components/CourseCard";
+import { Pressable, View } from "react-native";
 import { Mascot } from "../../src/components/Mascot";
-import { RouteMap } from "../../src/components/RouteMap";
 import {
   Button,
-  Glow,
   Icon,
+  Panel,
   Screen,
-  SectionTitle,
-  Status,
   T,
   useWide,
 } from "../../src/components/ui";
-import { PURPOSES } from "../../src/domain/catalog";
-import { useRecommendations } from "../../src/services/queries";
-import { isDemo } from "../../src/services/repository";
+import { PURPOSES, STARTS, formatDistance } from "../../src/domain/catalog";
+import type { Purpose } from "../../src/domain/contracts";
 import { usePreferences } from "../../src/state/preferences";
+import { useRunning } from "../../src/state/running";
 import { colors } from "../../src/theme/tokens";
+import { isDemo } from "../../src/services/repository";
+
+const prompts: Record<Purpose, string> = {
+  PACE: "일정한 페이스로\n달리고 싶어요",
+  POWER: "운동 강도를\n높이고 싶어요",
+  NIGHT: "밝은 길에서\n밤에 달리고 싶어요",
+  GREEN: "공원·녹지가 많은\n길을 달리고 싶어요",
+};
 export default function Home() {
   const wide = useWide();
-  const query = useRecommendations();
+  const update = usePreferences((s) => s.update);
   const request = usePreferences((s) => s.request);
-  const [selectedId, setSelectedId] = useState<string>();
-  const courses = query.data?.courses ?? [];
-  const selected = courses.find((c) => c.id === selectedId) ?? courses[0];
+  const favorites = usePreferences((s) => s.favorites);
+  const records = useRunning((s) => s.records);
+  const recent = records[0];
+  const destination =
+    request.route_type === "straight"
+      ? STARTS.find(
+          (s) =>
+            s.coordinate[0] === request.end[0] &&
+            s.coordinate[1] === request.end[1],
+        )
+      : undefined;
+  const start = STARTS.find(
+    (s) =>
+      s.coordinate[0] === request.start[0] &&
+      s.coordinate[1] === request.start[1],
+  );
+  const session = useRunning((s) => s.session);
+  const draft = useRunning((s) => s.draft);
   return (
     <Screen>
       <View
         style={{
           flexDirection: "row",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <View>
-          <T
-            accent
-            style={{ fontWeight: "900", fontSize: 31, letterSpacing: -1.8 }}
-          >
-            DALRO<T style={{ color: colors.lime, fontSize: 32 }}>.</T>
-          </T>
-          <T muted style={{ fontSize: 10, marginTop: 3, letterSpacing: 0.8 }}>
-            오늘도, 더 좋은 길로
-          </T>
-        </View>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-            backgroundColor: colors.panel,
-            borderRadius: 20,
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-          }}
+        <T
+          accent
+          style={{ fontSize: 28, fontWeight: "900", letterSpacing: -1.5 }}
         >
-          <View
-            style={{
-              height: 5,
-              width: 5,
-              borderRadius: 5,
-              backgroundColor: colors.lime,
-            }}
-          />
-          <T muted style={{ fontSize: 10 }}>
-            {isDemo ? "용산구 DEMO" : "용산구 PILOT"}
-          </T>
-        </View>
+          DALRO.
+        </T>
+        <T muted style={{ fontSize: 11 }}>
+          {isDemo ? "용산구 DEMO" : "용산구 PILOT"}
+        </T>
       </View>
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
+          marginTop: wide ? 24 : 10,
         }}
       >
-        <View style={{ flex: 1 }}>
-          <T muted style={{ fontSize: 11, letterSpacing: 2, marginBottom: 12 }}>
-            FIND YOUR RUN
-          </T>
+        <View style={{ flex: 1, gap: 12 }}>
           <T
             style={{
-              fontSize: wide ? 49 : 34,
-              fontWeight: "900",
-              letterSpacing: -1.8,
-              lineHeight: wide ? 60 : 43,
+              fontSize: wide ? 44 : 31,
+              lineHeight: wide ? 55 : 41,
+              fontWeight: "800",
+              letterSpacing: -1.3,
             }}
           >
-            오늘은<T accent>{"\n"}어디로 달릴까요?</T>
+            오늘은 어떻게{"\n"}달려볼까요?
           </T>
-          <T
-            muted
-            style={{ marginTop: 12, fontSize: wide ? 14 : 12, lineHeight: 21 }}
-          >
-            당신의 목적에 맞는 길,{wide ? " " : "\n"}달로가 함께 찾아드릴게요.
+          <T muted style={{ fontSize: 13 }}>
+            목적을 고르면, 나에게 맞는 길을 찾아요.
           </T>
         </View>
-        <View style={{ alignItems: "center" }}>
-          <Mascot size={wide ? 165 : 103} />
-          <T accent style={{ fontSize: 10, marginTop: -5 }}>
-            오늘도 좋은 러닝데이!
-          </T>
-        </View>
+        <Mascot size={wide ? 125 : 72} />
       </View>
-      <Conditions />
-      <View
-        style={{
-          flexDirection: wide ? "row" : "column",
-          gap: 22,
-          alignItems: "stretch",
-        }}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="오늘의 러닝 조건 변경"
+        onPress={() => router.push("/explore")}
+        style={({ pressed }) => ({
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          padding: 14,
+          borderRadius: 16,
+          backgroundColor: pressed ? colors.elevated : colors.panel,
+          borderWidth: 1,
+          borderColor: colors.line,
+        })}
       >
-        <View style={{ flex: wide ? 1.7 : undefined, gap: 14 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Icon name="navigate-outline" color={colors.lime} size={18} />
-            <T style={{ fontSize: 14, fontWeight: "700" }}>내 주변 러닝 코스</T>
-            <View style={{ flex: 1 }} />
-            <T muted style={{ fontSize: 10 }}>
-              출발지로 돌아오는 코스
-            </T>
-          </View>
-          <RouteMap
-            courses={courses}
-            selectedId={selected?.id}
-            onSelect={setSelectedId}
-            height={wide ? 395 : 280}
-          />
-          <Glow
-            style={{
-              padding: 18,
-              flexDirection: "row",
-              gap: 13,
-              alignItems: "center",
+        <Icon name="location-outline" color={colors.lime} size={20} />
+        <View style={{ flex: 1, gap: 4 }}>
+          <T style={{ fontSize: 13, fontWeight: "600" }}>
+            {start?.label ?? "선택한 출발지"}
+            {request.route_type === "straight"
+              ? ` → ${destination?.label ?? "선택한 목적지"}`
+              : ""}
+          </T>
+          <T muted style={{ fontSize: 11 }}>
+            {request.target_distance_m === null
+              ? "거리 자동"
+              : `${request.target_distance_m / 1000}km`}{" "}
+            · {request.time_of_day === "night" ? "야간" : "주간"} ·{" "}
+            {request.route_type === "straight"
+              ? "목적지까지 달리기"
+              : "출발지로 돌아오기"}
+          </T>
+        </View>
+        <T muted style={{ fontSize: 11 }}>
+          변경
+        </T>
+        <Icon name="chevron-forward" color={colors.muted} size={15} />
+      </Pressable>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        {(Object.keys(PURPOSES) as Purpose[]).map((p) => (
+          <Pressable
+            key={p}
+            accessibilityRole="button"
+            accessibilityLabel={`${p} 목적 선택`}
+            onPress={() => {
+              update({
+                purpose: p,
+                time_of_day: p === "NIGHT" ? "night" : "day",
+              });
+              router.push("/route-type");
             }}
+            style={({ pressed }) => ({
+              width: wide ? "48.9%" : "48%",
+              flexGrow: 1,
+              padding: wide ? 26 : 16,
+              minHeight: wide ? 180 : 148,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.line,
+              backgroundColor: pressed ? colors.elevated : colors.panel,
+              gap: 10,
+            })}
           >
-            <View
+            <Icon name={PURPOSES[p].icon} color={PURPOSES[p].color} size={27} />
+            <T
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 12,
-                backgroundColor: "#334527",
-                alignItems: "center",
-                justifyContent: "center",
+                fontWeight: "800",
+                fontSize: 21,
+                color: PURPOSES[p].color,
               }}
             >
-              <Icon
-                name={PURPOSES[request.purpose].icon}
-                color={colors.lime}
-                size={23}
-              />
-            </View>
-            <View style={{ flex: 1, gap: 5 }}>
-              <T style={{ fontWeight: "800", fontSize: 14 }}>
-                {PURPOSES[request.purpose].label}, 이렇게 달려봐요
+              {p}
+            </T>
+            <T muted style={{ fontSize: 12, lineHeight: 19 }}>
+              {prompts[p]}
+            </T>
+          </Pressable>
+        ))}
+      </View>
+      {session && (
+        <Button
+          label="진행 중인 러닝 이어가기"
+          icon="play"
+          onPress={() => router.push("/run")}
+        />
+      )}
+      {draft && (
+        <Button
+          label="지난 러닝 결과 확인"
+          secondary
+          onPress={() =>
+            router.push({ pathname: "/result", params: { id: draft.id } })
+          }
+        />
+      )}
+      <Panel style={{ padding: 20, gap: 18 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <T style={{ fontSize: 16, fontWeight: "700" }}>나의 러닝</T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="러닝 기록 보기"
+            onPress={() => router.push("/records")}
+            style={{ paddingVertical: 6 }}
+          >
+            <T muted style={{ fontSize: 12 }}>
+              기록 보기 →
+            </T>
+          </Pressable>
+        </View>
+        {records.length ? (
+          <View style={{ flexDirection: "row", gap: 24 }}>
+            <View style={{ flex: 1, gap: 6 }}>
+              <T accent style={{ fontSize: 28, fontWeight: "800" }}>
+                {records.length}회
               </T>
               <T muted style={{ fontSize: 11 }}>
-                {PURPOSES[request.purpose].description}
+                저장한 모의 러닝
               </T>
             </View>
-          </Glow>
-          <T muted style={{ fontSize: 10, lineHeight: 17 }}>
-            시연 경로·환경 수치는 가상 데이터입니다. 실제 도로를 따르는 코스
-            추천은 서버·알고리즘 연결 후 제공됩니다.
+            <View style={{ flex: 1, gap: 6 }}>
+              <T
+                style={{ fontSize: 28, fontWeight: "800", letterSpacing: -0.8 }}
+              >
+                {formatDistance(
+                  records.reduce((sum, record) => sum + record.distance_m, 0),
+                )}{" "}
+                km
+              </T>
+              <T muted style={{ fontSize: 11 }}>
+                누적 거리
+              </T>
+            </View>
+          </View>
+        ) : (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <Icon name="footsteps-outline" color={colors.lime} size={29} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <T style={{ fontSize: 14, fontWeight: "600" }}>
+                첫 발걸음부터 함께해요
+              </T>
+              <T muted style={{ fontSize: 12, lineHeight: 19 }}>
+                오늘의 목적을 고르고 나만의 러닝을 시작해 보세요.
+              </T>
+            </View>
+          </View>
+        )}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`저장한 코스 ${favorites.length}개 보기`}
+          onPress={() => router.push("/saved")}
+          style={{
+            borderTopWidth: 1,
+            borderColor: colors.line,
+            paddingTop: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <Icon name="heart-outline" color={colors.muted} size={18} />
+          <T style={{ flex: 1, fontSize: 13 }}>저장한 코스</T>
+          <T accent style={{ fontSize: 13 }}>
+            {favorites.length}개
           </T>
-        </View>
-        <View style={{ flex: wide ? 1 : undefined }}>
-          <SectionTitle
-            title="지금, 이 코스 어때요?"
-            caption="나의 조건에 맞춘 세 가지 선택"
-            action="전체보기"
-            onPress={() => router.push("/explore")}
-          />
-          {query.isPending ? (
-            <View
-              style={{
-                minHeight: 250,
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 16,
-              }}
-            >
-              <ActivityIndicator color={colors.lime} />
-              <T muted>나에게 맞는 길을 찾고 있어요</T>
-            </View>
-          ) : query.isError ? (
-            <Status
-              title="코스를 불러오지 못했어요"
-              message={query.error.message}
-              onRetry={() => void query.refetch()}
-            />
-          ) : courses.length === 0 ? (
-            <Status
-              title="조건에 맞는 코스가 없어요"
-              message="다른 출발지나 목표 거리를 선택해 주세요."
-            />
-          ) : (
-            <View style={{ gap: 12 }}>
-              {courses.map((course, i) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  rank={i + 1}
-                  selected={course.id === selected?.id}
-                  onSelect={() => setSelectedId(course.id)}
-                  compact
-                />
-              ))}
-            </View>
-          )}
-        </View>
-      </View>
-      {selected && (
-        <Button
-          label="추천 코스 자세히 보기"
-          onPress={() =>
-            router.push({
-              pathname: "/course/[id]",
-              params: { id: selected.id },
-            })
-          }
-          style={{ alignSelf: wide ? "flex-start" : "stretch" }}
-        />
+          <Icon name="chevron-forward" color={colors.muted} size={16} />
+        </Pressable>
+      </Panel>
+      {recent && (
+        <Panel style={{ padding: 18, gap: 12 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <T muted style={{ fontSize: 12 }}>
+              최근 러닝 · 모의 기록
+            </T>
+            <T accent style={{ fontSize: 12 }}>
+              {formatDistance(recent.distance_m)} km
+            </T>
+          </View>
+          <T style={{ fontWeight: "700" }}>{recent.course.name}</T>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="지난번 코스 다시 달리기"
+            onPress={() =>
+              router.push({
+                pathname: "/course/[id]",
+                params: { id: recent.course.id },
+              })
+            }
+            style={{ paddingVertical: 6 }}
+          >
+            <T accent style={{ fontSize: 13 }}>
+              지난번 코스 다시 달리기 →
+            </T>
+          </Pressable>
+        </Panel>
       )}
     </Screen>
   );

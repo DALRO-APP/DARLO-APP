@@ -1,152 +1,55 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import type { Course } from "../domain/contracts";
-import { PURPOSES } from "../domain/catalog";
 import { usePreferences } from "../state/preferences";
 import { colors } from "../theme/tokens";
-import { Icon, T } from "./ui";
-import { Scenery } from "./Scenery";
-export function CourseCard({
-  course,
-  rank,
-  selected,
-  onSelect,
-  compact,
-}: {
-  course: Course;
-  rank?: number;
-  selected?: boolean;
-  onSelect?: () => void;
-  compact?: boolean;
-}) {
+import { Icon, Panel, T } from "./ui";
+
+export function CourseCard({ course }: { course: Course }) {
   const favorite = usePreferences((s) => s.favorites.includes(course.id));
   const toggle = usePreferences((s) => s.toggleFavorite);
-  const purpose = PURPOSES[course.purpose];
   return (
-    <View style={[cardStyles.card, selected && { borderColor: "#637F3E" }]}>
-      {!compact && (
+    <Panel style={{ padding: 18, gap: 12 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <T accent style={{ fontSize: 12 }}>
+          {course.purpose} · {course.is_mock ? "더미 코스" : course.region}
+        </T>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${course.name} 이미지에서 상세 보기`}
-          onPress={() =>
-            router.push({ pathname: "/course/[id]", params: { id: course.id } })
-          }
+          accessibilityLabel={`${course.name} ${favorite ? "저장 해제" : "저장"}`}
+          onPress={() => toggle(course.id)}
+          style={{ padding: 8 }}
         >
-          <Scenery purpose={course.purpose} height={140} />
-        </Pressable>
-      )}
-      <View style={{ padding: 17, gap: 10 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${course.name} 지도 선택`}
-            onPress={onSelect}
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            {rank && (
-              <View style={cardStyles.rank}>
-                <T
-                  style={{
-                    fontWeight: "900",
-                    color: colors.background,
-                    fontSize: 11,
-                  }}
-                >
-                  {rank}
-                </T>
-              </View>
-            )}
-            <T
-              style={{
-                color: purpose.color,
-                fontSize: 10,
-                fontWeight: "800",
-                letterSpacing: 1.3,
-              }}
-            >
-              {purpose.short} · {purpose.label}
-            </T>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${course.name} ${favorite ? "저장 해제" : "저장"}`}
-            accessibilityState={{ selected: favorite }}
-            onPress={() => toggle(course.id)}
-            hitSlop={10}
-          >
-            <Icon
-              name={favorite ? "heart" : "heart-outline"}
-              size={22}
-              color={favorite ? colors.lime : colors.muted}
-            />
-          </Pressable>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${course.name} 상세 보기`}
-          onPress={() =>
-            router.push({ pathname: "/course/[id]", params: { id: course.id } })
-          }
-          style={{ gap: 8 }}
-        >
-          <T style={{ fontSize: 19, letterSpacing: -0.7, fontWeight: "800" }}>
-            {course.name}
-          </T>
-          <T muted style={{ fontSize: 12 }}>
-            {course.subtitle}
-          </T>
-          <View style={{ flexDirection: "row", gap: 17, marginTop: 4 }}>
-            <T style={{ fontSize: 13, fontWeight: "600" }}>
-              {(course.summary.distance_m / 1000).toFixed(1)}{" "}
-              <T muted style={{ fontSize: 11 }}>
-                km
-              </T>
-            </T>
-            <T style={{ fontSize: 13 }}>
-              {Math.round(course.summary.estimated_duration_s / 60)}{" "}
-              <T muted style={{ fontSize: 11 }}>
-                분
-              </T>
-            </T>
-            <T muted style={{ fontSize: 13 }}>
-              {course.summary.elevation_gain_m === null
-                ? "고도 미확인"
-                : `↗ ${course.summary.elevation_gain_m}m`}
-            </T>
-            <View style={{ flex: 1 }} />
-            <Icon name="arrow-forward" size={18} color={colors.lime} />
-          </View>
+          <Icon
+            name={favorite ? "heart" : "heart-outline"}
+            color={colors.lime}
+            size={20}
+          />
         </Pressable>
       </View>
-    </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${course.name} 상세 보기`}
+        onPress={() =>
+          router.push({ pathname: "/course/[id]", params: { id: course.id } })
+        }
+        style={{ gap: 10, paddingVertical: 4 }}
+      >
+        <T style={{ fontSize: 18, fontWeight: "700" }}>{course.name}</T>
+        <T muted style={{ fontSize: 12 }}>
+          {course.route_type === "straight"
+            ? `${course.start_label} → ${course.end_label}`
+            : course.start_label}{" "}
+          · {(course.summary.distance_m / 1000).toFixed(1)}
+          km · 약 {Math.round(course.summary.estimated_duration_s / 60)}분
+        </T>
+      </Pressable>
+    </Panel>
   );
 }
-const cardStyles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.panel,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-  rank: {
-    backgroundColor: colors.lime,
-    width: 20,
-    height: 20,
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

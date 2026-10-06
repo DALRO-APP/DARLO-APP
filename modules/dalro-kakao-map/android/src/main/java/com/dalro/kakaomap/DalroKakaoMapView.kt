@@ -30,8 +30,10 @@ class DalroKakaoMapView(context: Context, appContext: AppContext) : ExpoView(con
   private var camera: JSONObject? = null
   private var runner: JSONObject? = null
   private var startStyles: LabelStyles? = null
+  private var endStyles: LabelStyles? = null
   private var runnerStyles: LabelStyles? = null
   private var start: Label? = null
+  private var end: Label? = null
   private var running: Label? = null
   private var failed = false
 
@@ -74,7 +76,8 @@ class DalroKakaoMapView(context: Context, appContext: AppContext) : ExpoView(con
         if (mapView !== view) return
         map = kakaoMap
         val labels = kakaoMap.labelManager
-        startStyles = labels.addLabelStyles(LabelStyles.from("start", LabelStyle.from(marker("출발·도착", Color.rgb(171, 255, 92)))))
+        startStyles = labels.addLabelStyles(LabelStyles.from("start", LabelStyle.from(marker("출발", Color.rgb(171, 255, 92)))))
+        endStyles = labels.addLabelStyles(LabelStyles.from("end", LabelStyle.from(marker("도착", Color.rgb(198, 182, 255)))))
         runnerStyles = labels.addLabelStyles(LabelStyles.from("runner", LabelStyle.from(marker("달로", Color.WHITE))))
         drawRoutes(); moveCamera(); drawRunner()
         if (!active || !foreground) view.pause() else view.resume()
@@ -88,8 +91,10 @@ class DalroKakaoMapView(context: Context, appContext: AppContext) : ExpoView(con
     mapView = null
     map = null
     start = null
+    end = null
     running = null
     startStyles = null
+    endStyles = null
     runnerStyles = null
     failed = false
     view?.pause()
@@ -103,6 +108,7 @@ class DalroKakaoMapView(context: Context, appContext: AppContext) : ExpoView(con
     layer.removeAll()
     val labels = map.labelManager.layer
     start?.let { labels.remove(it) }; start = null
+    end?.let { labels.remove(it) }; end = null
     for (i in 0 until routes.length()) {
       val route = routes.getJSONObject(i)
       val coordinates = route.getJSONArray("points")
@@ -112,6 +118,9 @@ class DalroKakaoMapView(context: Context, appContext: AppContext) : ExpoView(con
       val styles = RouteLineStyles.from(RouteLineStyle.from(if (selected) 8f else 5f, if (selected) Color.rgb(171, 255, 92) else Color.rgb(87, 125, 87), 2f, Color.BLACK))
       val segment = RouteLineSegment.from(points).setStyles(styles)
       layer.addRouteLine(RouteLineOptions.from(segment).setStylesSet(RouteLineStylesSet.from(styles)).setZOrder(if (selected) 1 else 0))
+      if (selected && endStyles != null) route.optJSONObject("end")?.let { point ->
+        end = labels.addLabel(LabelOptions.from("end", position(point)).setStyles(endStyles).setRank(100))
+      }
       if (selected && startStyles != null) start = labels.addLabel(LabelOptions.from("start", points.first()).setStyles(startStyles).setRank(100))
     }
   }

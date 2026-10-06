@@ -1,4 +1,5 @@
 import type { Course, Position } from "../domain/contracts";
+import { routeProgress } from "./progress";
 
 export interface NativeCoordinate {
   latitude: number;
@@ -9,14 +10,37 @@ export const nativeCoordinate = ([
   latitude,
 ]: Position): NativeCoordinate => ({ latitude, longitude });
 
-export function nativeRoutes(courses: Course[], selectedId?: string) {
+export function nativeRoutes(
+  courses: Course[],
+  selectedId?: string,
+  progress?: number,
+) {
   const selected =
     courses.find((course) => course.id === selectedId) ?? courses[0];
-  return courses.map((course) => ({
+  const trail =
+    selected && progress !== undefined
+      ? routeProgress(selected.geometry.coordinates, progress)
+      : null;
+  const routes = courses.map((course) => ({
     id: course.id,
     selected: course.id === selected?.id,
-    points: course.geometry.coordinates.map(nativeCoordinate),
+    end:
+      course.route_type === "straight"
+        ? nativeCoordinate(course.geometry.coordinates.at(-1)!)
+        : null,
+    points: (course.id === selected?.id && trail
+      ? trail.travelled
+      : course.geometry.coordinates
+    ).map(nativeCoordinate),
   }));
+  if (trail && selected && trail.remaining.length > 1)
+    routes.push({
+      id: `${selected.id}-remaining`,
+      selected: false,
+      end: null,
+      points: trail.remaining.map(nativeCoordinate),
+    });
+  return routes;
 }
 
 export function nativeRunner(
@@ -25,15 +49,9 @@ export function nativeRunner(
 ): NativeCoordinate | null {
   if (!course || progress === undefined || !Number.isFinite(progress))
     return null;
-  const points = course.geometry.coordinates;
-  const cursor = Math.max(0, Math.min(1, progress)) * (points.length - 1);
-  const index = Math.floor(cursor);
-  const first = points[index]!;
-  const next = points[Math.min(index + 1, points.length - 1)]!;
-  return nativeCoordinate([
-    first[0] + (next[0] - first[0]) * (cursor - index),
-    first[1] + (next[1] - first[1]) * (cursor - index),
-  ]);
+  return nativeCoordinate(
+    routeProgress(course.geometry.coordinates, progress)!.position,
+  );
 }
 
 // Fit Web Mercator bounds with room for markers; progress updates never change the camera.

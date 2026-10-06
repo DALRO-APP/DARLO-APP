@@ -1,17 +1,13 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable, View } from "react-native";
-import { Mascot } from "../../src/components/Mascot";
-import { RouteMap } from "../../src/components/RouteMap";
+import { useEffect } from "react";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import {
   Button,
-  Chip,
-  Glow,
   Icon,
   Panel,
   Screen,
-  SectionTitle,
+  Status,
   T,
-  useWide,
 } from "../../src/components/ui";
 import {
   formatDistance,
@@ -19,217 +15,148 @@ import {
   formatPace,
 } from "../../src/domain/catalog";
 import { useRunning } from "../../src/state/running";
+import { useLocalDataReady } from "../../src/state/hydration";
 import { colors } from "../../src/theme/tokens";
-const reviewTags = ["풍경이 멋져요", "달리기 좋은 길", "또 달리고 싶어요"];
+
 export default function Records() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const records = useRunning((s) => s.records);
-  const review = useRunning((s) => s.review);
-  const wide = useWide();
-  const record = records.find((r) => r.id === id) ?? records[0];
+  const draft = useRunning((s) => s.draft);
+  const hydrated = useLocalDataReady();
+  useEffect(() => {
+    if (id) router.replace({ pathname: "/result", params: { id } });
+  }, [id]);
   return (
-    <Screen>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <View>
-          <T
-            accent
-            style={{ fontSize: 11, letterSpacing: 2, marginBottom: 12 }}
-          >
-            EVERY RUN COUNTS
-          </T>
-          <T style={{ fontSize: 34, fontWeight: "900", letterSpacing: -1 }}>
-            오늘의<T accent>{"\n"}러닝 기록.</T>
-          </T>
-        </View>
-        <Mascot size={115} celebrate />
+    <Screen narrow>
+      <View style={{ gap: 8 }}>
+        <T style={{ fontSize: 30, fontWeight: "800", letterSpacing: -1 }}>
+          러닝 기록
+        </T>
+        <T muted style={{ fontSize: 12 }}>
+          이 기기에 저장한 모의 러닝을 확인해요.
+        </T>
       </View>
-      {!record ? (
-        <Glow style={{ padding: 28, gap: 18 }}>
-          <T style={{ fontSize: 20, fontWeight: "800" }}>
-            첫 번째 달리기를 기다리고 있어요.
-          </T>
-          <T muted style={{ lineHeight: 23 }}>
-            코스를 고르고 모의 러닝을 시작해 보세요.{"\n"}달린 거리와 시간, 코스
-            후기가 여기에 쌓여요.
-          </T>
-          <Button label="첫 러닝 시작하기" onPress={() => router.push("/")} />
-        </Glow>
+      {!hydrated ? (
+        <ActivityIndicator color={colors.lime} />
       ) : (
         <>
-          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-            <Icon name="checkmark-circle" color={colors.lime} size={18} />
-            <T muted style={{ fontSize: 12 }}>
-              {new Date(record.started_at).toLocaleString("ko-KR", {
-                timeZone: "Asia/Seoul",
-                month: "long",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}{" "}
-              · 시연 기록
-            </T>
-          </View>
-          <Glow
-            style={{
-              padding: 22,
-              flexDirection: "row",
-              gap: 20,
-              justifyContent: "space-around",
-              flexWrap: "wrap",
-            }}
-          >
-            {[
-              {
-                label: "총 거리",
-                value: `${formatDistance(record.distance_m)} km`,
-              },
-              { label: "총 시간", value: formatDuration(record.elapsed_s) },
-              {
-                label: "평균 페이스",
-                value: formatPace(record.elapsed_s, record.distance_m),
-              },
-            ].map((metric) => (
-              <View key={metric.label} style={{ gap: 9 }}>
-                <T muted style={{ fontSize: 11 }}>
-                  {metric.label}
-                </T>
-                <T
-                  accent
-                  style={{ fontWeight: "900", fontSize: wide ? 37 : 26 }}
-                >
-                  {metric.value}
-                </T>
-              </View>
-            ))}
-          </Glow>
-          <View style={{ flexDirection: wide ? "row" : "column", gap: 22 }}>
-            <View style={{ flex: wide ? 1.4 : undefined, gap: 12 }}>
-              <SectionTitle
-                title={record.course.name}
-                caption={`${record.course.start_label}에서 시작한 달리기`}
+          {draft && (
+            <Panel style={{ padding: 18, gap: 12 }}>
+              <T style={{ fontSize: 14 }}>
+                아직 저장하지 않은 러닝 결과가 있어요.
+              </T>
+              <Button
+                label="지난 러닝 결과 확인"
+                secondary
+                onPress={() =>
+                  router.push({ pathname: "/result", params: { id: draft.id } })
+                }
               />
-              <RouteMap
-                courses={[record.course]}
-                selectedId={record.course.id}
-                progress={record.distance_m / record.course.summary.distance_m}
-                height={320}
+            </Panel>
+          )}
+          {!records.length ? (
+            <>
+              <Status
+                title="첫 번째 달리기를 기다리고 있어요."
+                message="목적을 고르고 러닝을 시작해 보세요."
               />
-              <T muted style={{ fontSize: 10 }}>
-                모의 주행 기록 · 실제 GPS나 운동 측정 데이터가 아닙니다.
-              </T>
-            </View>
-            <Panel style={{ flex: wide ? 1 : undefined, padding: 24, gap: 18 }}>
-              <T style={{ fontSize: 21, fontWeight: "800" }}>
-                이번 코스는 어땠나요?
-              </T>
-              <T muted style={{ fontSize: 12 }}>
-                당신의 한마디가 다음 달리기에 도움이 돼요.
-              </T>
+              <Button
+                label="첫 러닝 시작하기"
+                icon="play"
+                onPress={() => router.push("/")}
+              />
+            </>
+          ) : (
+            <>
               <View
-                accessibilityRole="radiogroup"
-                accessibilityLabel="코스 만족도"
-                style={{ flexDirection: "row", gap: 10 }}
+                style={{ flexDirection: "row", gap: 24, paddingVertical: 8 }}
               >
-                {[1, 2, 3, 4, 5].map((rating) => (
+                <View style={{ gap: 6 }}>
+                  <T accent style={{ fontSize: 27, fontWeight: "800" }}>
+                    {records.length}회
+                  </T>
+                  <T muted style={{ fontSize: 12 }}>
+                    저장한 러닝
+                  </T>
+                </View>
+                <View style={{ gap: 6 }}>
+                  <T style={{ fontSize: 27, fontWeight: "800" }}>
+                    {formatDistance(
+                      records.reduce((sum, r) => sum + r.distance_m, 0),
+                    )}{" "}
+                    km
+                  </T>
+                  <T muted style={{ fontSize: 12 }}>
+                    누적 거리
+                  </T>
+                </View>
+              </View>
+              <View style={{ gap: 12 }}>
+                {records.map((record) => (
                   <Pressable
-                    key={rating}
-                    accessibilityRole="radio"
-                    accessibilityLabel={`평점 ${rating}점`}
-                    accessibilityState={{ checked: record.rating === rating }}
-                    aria-checked={record.rating === rating}
-                    onPress={() => review(record.id, rating, record.tags)}
+                    key={record.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${record.course.name} 러닝 결과 보기`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/result",
+                        params: { id: record.id },
+                      })
+                    }
+                    style={{
+                      padding: 20,
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      borderColor: colors.line,
+                      backgroundColor: colors.panel,
+                      gap: 12,
+                    }}
                   >
-                    <Icon
-                      name={rating <= record.rating ? "heart" : "heart-outline"}
-                      color={
-                        rating <= record.rating ? colors.lime : colors.faint
-                      }
-                      size={29}
-                    />
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <T accent style={{ fontSize: 12 }}>
+                        {record.course.purpose}
+                      </T>
+                      <T muted style={{ fontSize: 11 }}>
+                        {new Date(record.started_at).toLocaleDateString(
+                          "ko-KR",
+                          { timeZone: "Asia/Seoul" },
+                        )}
+                      </T>
+                    </View>
+                    <T style={{ fontSize: 16, fontWeight: "700" }}>
+                      {record.course.name}
+                    </T>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <T style={{ fontWeight: "700", fontSize: 18 }}>
+                        {formatDistance(record.distance_m)} km
+                      </T>
+                      <T muted style={{ flex: 1, fontSize: 12 }}>
+                        {formatDuration(record.elapsed_s)} ·{" "}
+                        {formatPace(record.elapsed_s, record.distance_m)}/km
+                      </T>
+                      <Icon
+                        name="chevron-forward"
+                        color={colors.muted}
+                        size={17}
+                      />
+                    </View>
                   </Pressable>
                 ))}
               </View>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {reviewTags.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    selected={record.tags.includes(tag)}
-                    onPress={() =>
-                      review(
-                        record.id,
-                        record.rating,
-                        record.tags.includes(tag)
-                          ? record.tags.filter((t) => t !== tag)
-                          : [...record.tags, tag],
-                      )
-                    }
-                  />
-                ))}
-              </View>
-              <View style={{ flex: 1 }} />
-              <T muted style={{ fontSize: 10 }}>
-                {record.rating
-                  ? "후기는 이 기기에 저장되었어요."
-                  : "하트를 눌러 만족도를 남겨주세요."}
-              </T>
-              <Button
-                label="다시 추천받기"
-                icon="refresh"
-                onPress={() => router.push("/")}
-              />
-            </Panel>
-          </View>
-          <View>
-            <SectionTitle
-              title="차곡차곡 쌓인 달리기"
-              caption={`${records.length}회 · 누적 ${formatDistance(records.reduce((sum, r) => sum + r.distance_m, 0))}km`}
-            />
-            <View style={{ gap: 12 }}>
-              {records.map((r) => (
-                <Pressable
-                  key={r.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${r.course.name} 러닝 기록 보기`}
-                  onPress={() => router.setParams({ id: r.id })}
-                >
-                  <Panel
-                    style={{
-                      padding: 18,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: 14,
-                      borderColor: r.id === record.id ? "#637F3E" : colors.line,
-                    }}
-                  >
-                    <Icon
-                      name="footsteps-outline"
-                      color={colors.lime}
-                      size={24}
-                    />
-                    <View style={{ flex: 1, gap: 5 }}>
-                      <T style={{ fontWeight: "700" }}>{r.course.name}</T>
-                      <T muted style={{ fontSize: 11 }}>
-                        {formatDistance(r.distance_m)}km ·{" "}
-                        {formatDuration(r.elapsed_s)} · 시연
-                      </T>
-                    </View>
-                    <Icon
-                      name="chevron-forward"
-                      color={colors.muted}
-                      size={18}
-                    />
-                  </Panel>
-                </Pressable>
-              ))}
-            </View>
-          </View>
+            </>
+          )}
         </>
       )}
     </Screen>

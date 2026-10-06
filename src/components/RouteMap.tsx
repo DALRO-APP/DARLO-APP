@@ -99,8 +99,8 @@ function NativeRouteMap({
   const selected =
     courses.find((course) => course.id === selectedId) ?? courses[0];
   const routesJson = useMemo(
-    () => JSON.stringify(nativeRoutes(courses, selectedId)),
-    [courses, selectedId],
+    () => JSON.stringify(nativeRoutes(courses, selectedId, progress)),
+    [courses, selectedId, progress],
   );
   const cameraJson = useMemo(
     () =>
@@ -212,7 +212,11 @@ function NativeRouteMap({
       <View style={styles.footer}>
         <Icon name="navigate" color={colors.lime} size={17} />
         <View style={{ flex: 1, gap: 3 }}>
-          <T style={{ fontSize: 12 }}>{selected?.start_label ?? "용산구"}</T>
+          <T style={{ fontSize: 12 }}>
+            {selected?.route_type === "straight"
+              ? `${selected.start_label} → ${selected.end_label}`
+              : (selected?.start_label ?? "용산구")}
+          </T>
           <T muted style={{ fontSize: 10 }}>
             카카오 지도 · 코스 경로는 시연용
           </T>

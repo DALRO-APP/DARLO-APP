@@ -11,6 +11,7 @@ private struct CourseLine: Decodable {
   let id: String
   let selected: Bool
   let points: [Coordinate]
+  let end: Coordinate?
 }
 private struct Camera: Decodable {
   let latitude: Double
@@ -129,7 +130,7 @@ class DalroKakaoMapView: ExpoView, MapControllerDelegate {
       manager.addRouteStyleSet(set)
     }
     let labels = map.getLabelManager()
-    for (id, text, color) in [("start", "출발·도착", UIColor(red: 0.67, green: 1, blue: 0.36, alpha: 1)), ("runner", "달로", UIColor.white)] {
+    for (id, text, color) in [("start", "출발", UIColor(red: 0.67, green: 1, blue: 0.36, alpha: 1)), ("end", "도착", UIColor(red: 0.78, green: 0.71, blue: 1, alpha: 1)), ("runner", "달로", UIColor.white)] {
       let icon = PoiIconStyle(symbol: marker(text, color: color))
       labels.addPoiStyle(PoiStyle(styleID: id, styles: [PerLevelPoiStyle(iconStyle: icon)]))
     }
@@ -159,6 +160,10 @@ class DalroKakaoMapView: ExpoView, MapControllerDelegate {
     }
     if let labels = map.getLabelManager().getLabelLayer(layerID: "markers") {
       labels.removePoi(poiID: "start")
+      labels.removePoi(poiID: "end")
+      if let end = routes.first(where: { $0.selected })?.end {
+        labels.addPoi(option: PoiOptions(styleID: "end", poiID: "end"), at: end.point)?.show()
+      }
       if let point = routes.first(where: { $0.selected })?.points.first {
         labels.addPoi(option: PoiOptions(styleID: "start", poiID: "start"), at: point.point)?.show()
       }

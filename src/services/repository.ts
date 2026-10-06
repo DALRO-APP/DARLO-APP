@@ -2,6 +2,7 @@ import {
   courseSchema,
   recommendationRequestSchema,
   recommendationResponseSchema,
+  parseRecommendations,
   type RecommendationRequest,
   type RecommendationResponse,
   type Course,
@@ -35,15 +36,9 @@ export class MockCourseRepository implements CourseRepository {
       }, 420);
       signal?.addEventListener("abort", abort, { once: true });
     });
-    const alternate: Purpose[] =
-      request.time_of_day === "night"
-        ? ["NIGHT", "PACE", "GREEN", "POWER"]
-        : ["PACE", "GREEN", "POWER", "NIGHT"];
-    const purposes = [
-      request.purpose,
-      ...alternate.filter((p) => p !== request.purpose),
-    ].slice(0, 3);
-    const courses = purposes.map((p, rank) => makeMockCourse(request, p, rank));
+    const courses = [0, 1, 2].map((rank) =>
+      makeMockCourse(request, request.purpose, rank),
+    );
     courses.forEach((c) => this.courses.set(c.id, c));
     return recommendationResponseSchema.parse({
       schema_version: "1.0",
@@ -54,25 +49,44 @@ export class MockCourseRepository implements CourseRepository {
   async getCourse(id: string): Promise<Course> {
     const existing = this.courses.get(id);
     if (existing) return existing;
+    const straight =
+      /^straight-(pace|power|night|green)-(ichon|namsan|yongsan)-(ichon|namsan|yongsan)-(day|night)-([0-2])$/.exec(
+        id,
+      );
+    if (straight) {
+      const { STARTS } = await import("../domain/catalog");
+      const request = recommendationRequestSchema.parse({
+        schema_version: "1.0",
+        start: STARTS.find((s) => s.id === straight[2])!.coordinate,
+        end: STARTS.find((s) => s.id === straight[3])!.coordinate,
+        purpose: straight[1]!.toUpperCase(),
+        route_type: "straight",
+        target_distance_m: null,
+        time_of_day: straight[4],
+        distance_tolerance_ratio: 0.1,
+      });
+      return makeMockCourse(request, request.purpose, Number(straight[5]));
+    }
     // URL 직접 진입/새로고침에서도 동일한 데모 코스를 복원합니다.
     const match =
-      /^(pace|power|night|green)-(ichon|namsan|yongsan)-(3000|5000|8000)-(day|night)-([0-2])$/.exec(
+      /^(pace|power|night|green)-(ichon|namsan|yongsan)-(\d{4,5})-(day|night)-([0-2])$/.exec(
         id,
       );
     if (!match)
       throw new Error("코스를 찾을 수 없습니다. 홈에서 다시 추천받아 주세요.");
     const { STARTS } = await import("../domain/catalog");
     const start = STARTS.find((s) => s.id === match[2])!;
+    const request = recommendationRequestSchema.parse({
+      schema_version: "1.0",
+      start: start.coordinate,
+      target_distance_m: Number(match[3]),
+      purpose: match[1]!.toUpperCase() as Purpose,
+      time_of_day: match[4] as "day" | "night",
+      route_type: "loop",
+      distance_tolerance_ratio: 0.1,
+    });
     return makeMockCourse(
-      {
-        schema_version: "1.0",
-        start: start.coordinate,
-        target_distance_m: Number(match[3]),
-        purpose: match[1]!.toUpperCase() as Purpose,
-        time_of_day: match[4] as "day" | "night",
-        route_type: "loop",
-        distance_tolerance_ratio: 0.1,
-      },
+      request,
       match[1]!.toUpperCase() as Purpose,
       Number(match[5]),
     );
@@ -112,12 +126,14 @@ export class HttpCourseRepository implements CourseRepository {
     }
   }
   async recommend(request: RecommendationRequest, signal?: AbortSignal) {
-    return recommendationResponseSchema.parse(
+    const valid = recommendationRequestSchema.parse(request);
+    return parseRecommendations(
       await this.request("/v1/courses/recommendations", {
         method: "POST",
-        body: JSON.stringify(recommendationRequestSchema.parse(request)),
+        body: JSON.stringify(valid),
         signal,
       }),
+      valid,
     );
   }
   async getCourse(id: string, signal?: AbortSignal) {

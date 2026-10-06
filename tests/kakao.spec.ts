@@ -6,6 +6,16 @@ test("카카오 공급자가 위경도·코스 선택·조건 변경·모의 주
 }) => {
   const requestCount = await mockKakaoSdk(page);
   await page.goto("/");
+  await page
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Straight 선택", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
   await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
   test.skip(
     (await page.locator('[data-testid="kakao-map"]:visible').count()) === 0,
@@ -56,8 +66,12 @@ test("카카오 공급자가 위경도·코스 선택·조건 변경·모의 주
       ),
     )
     .toEqual(nextPath);
+  await page.getByRole("button", { name: "조건 변경", exact: true }).click();
   await page.getByRole("button", { name: "3km", exact: true }).click();
-  await expect(page.getByText("3.0 km", { exact: true }).first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
+  await expect(page.getByText("추천 1 · 3.0km", { exact: true })).toBeVisible();
   const coordinates = await page.evaluate(() =>
     (window as any).__kakaoTest.paths
       .filter((p: any) => p.map)
@@ -65,11 +79,9 @@ test("카카오 공급자가 위경도·코스 선택·조건 변경·모의 주
   );
   expect(coordinates).not.toEqual(initial.paths);
   await page
-    .getByRole("button", { name: "한강 리듬 코스 상세 보기", exact: true })
-    .click();
-  await page
     .getByRole("button", { name: "이 코스로 달리기", exact: true })
     .click();
+  await page.getByRole("button", { name: "러닝 시작", exact: true }).click();
   await expect(
     page.locator('[data-testid="kakao-map"]:visible'),
   ).toHaveAttribute("data-map-status", "ready");
@@ -81,6 +93,7 @@ test("카카오 공급자가 위경도·코스 선택·조건 변경·모의 주
         )?.options.position,
     );
   const start = await position();
+  await page.getByRole("button", { name: "시연 도구", exact: true }).click();
   await page
     .getByRole("button", { name: "시연 1분 이동", exact: true })
     .click();
@@ -94,6 +107,16 @@ test("카카오 공급자가 위경도·코스 선택·조건 변경·모의 주
 test("SDK 실패를 표시하고 새 요청으로 재시도한다", async ({ page }) => {
   const requestCount = await mockKakaoSdk(page, true);
   await page.goto("/");
+  await page
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Straight 선택", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
   await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
   test.skip(
     (await page.locator('[data-testid="kakao-map"]:visible').count()) === 0,
@@ -118,6 +141,16 @@ test("실패한 지도에서 사용자가 도식 지도로 전환해 시연을 �
     route.abort("failed"),
   );
   await page.goto("/");
+  await page
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Straight 선택", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
   await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
   test.skip(
     (await page.locator('[data-testid="kakao-map"]:visible').count()) === 0,
@@ -130,6 +163,25 @@ test("실패한 지도에서 사용자가 도식 지도로 전환해 시연을 �
     0,
   );
   await expect(
-    page.getByRole("button", { name: "한강 리듬 코스 상세 보기", exact: true }),
+    page.getByRole("button", { name: "이 코스로 달리기", exact: true }),
   ).toBeVisible();
+  const map = page.getByLabel("용산구 오프라인 시연 코스 지도");
+  await expect(map).toBeVisible();
+  const contained = await map.evaluate((svg) => {
+    const bounds = (svg as SVGSVGElement).viewBox.baseVal;
+    return Array.from(svg.querySelectorAll("polyline")).every((line) =>
+      Array.from(line.points).every(
+        (point) =>
+          point.x >= 0 &&
+          point.x <= bounds.width &&
+          point.y >= 0 &&
+          point.y <= bounds.height,
+      ),
+    );
+  });
+  expect(contained).toBe(true);
+  await page.screenshot({
+    path: `test-results/${test.info().project.name}-offline-recommendations.png`,
+    fullPage: true,
+  });
 });

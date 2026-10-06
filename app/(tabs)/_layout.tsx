@@ -4,9 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, T } from "../../src/components/ui";
 import { colors } from "../../src/theme/tokens";
 const tabs = [
-  { name: "index", label: "홈", icon: "home-outline" as const },
-  { name: "explore", label: "탐색", icon: "search-outline" as const },
   { name: "records", label: "기록", icon: "stats-chart-outline" as const },
+  { name: "index", label: "런닝", icon: "play" as const },
   { name: "profile", label: "마이", icon: "person-outline" as const },
 ];
 type TabBarProps = Parameters<
@@ -60,11 +59,35 @@ function TabBar({ state, navigation }: TabBarProps) {
                 alignItems: "center",
               }}
             >
-              <Icon
-                name={tab.icon}
-                color={active ? colors.lime : colors.muted}
-                size={23}
-              />
+              <View
+                style={
+                  tab.name === "index"
+                    ? {
+                        width: 46,
+                        height: 46,
+                        borderRadius: 23,
+                        backgroundColor: colors.lime,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginTop: -22,
+                        borderWidth: 5,
+                        borderColor: colors.background,
+                      }
+                    : undefined
+                }
+              >
+                <Icon
+                  name={tab.icon}
+                  color={
+                    tab.name === "index"
+                      ? colors.background
+                      : active
+                        ? colors.lime
+                        : colors.muted
+                  }
+                  size={tab.name === "index" ? 20 : 23}
+                />
+              </View>
               <T
                 style={{
                   fontSize: 10,
@@ -84,6 +107,7 @@ function TabBar({ state, navigation }: TabBarProps) {
 export default function TabLayout() {
   return (
     <Tabs
+      initialRouteName="index"
       tabBar={(props) => <TabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >

@@ -7,15 +7,31 @@ export const positionSchema = z.tuple([
 export type Position = z.infer<typeof positionSchema>;
 export const purposeSchema = z.enum(["PACE", "POWER", "NIGHT", "GREEN"]);
 export type Purpose = z.infer<typeof purposeSchema>;
-export const recommendationRequestSchema = z.object({
+const requestBase = {
   schema_version: z.literal("1.0"),
   start: positionSchema,
-  target_distance_m: z.number().int().min(1000).max(20000),
   purpose: purposeSchema,
   time_of_day: z.enum(["day", "night"]),
-  route_type: z.literal("loop"),
   distance_tolerance_ratio: z.number().min(0).max(0.3),
-});
+};
+export const recommendationRequestSchema = z.discriminatedUnion("route_type", [
+  z.object({
+    ...requestBase,
+    route_type: z.literal("loop"),
+    target_distance_m: z.number().int().min(1000).max(20000),
+  }),
+  z
+    .object({
+      ...requestBase,
+      route_type: z.literal("straight"),
+      end: positionSchema,
+      target_distance_m: z.null(),
+    })
+    .refine((request) => haversine(request.start, request.end) >= 50, {
+      path: ["end"],
+      message: "출발지와 목적지는 50m 이상 떨어져 있어야 합니다.",
+    }),
+]);
 export type RecommendationRequest = z.infer<typeof recommendationRequestSchema>;
 export const courseSchema = z
   .object({
@@ -25,6 +41,9 @@ export const courseSchema = z
     purpose: purposeSchema,
     region: z.string(),
     start_label: z.string(),
+    route_type: z.enum(["loop", "straight"]).default("loop"),
+    end: positionSchema.optional(),
+    end_label: z.string().min(1).optional(),
     geometry: z.object({
       type: z.literal("LineString"),
       coordinates: z.array(positionSchema).min(4),
@@ -42,7 +61,15 @@ export const courseSchema = z
     }),
     reasons: z.array(
       z.object({
-        code: z.enum(["flat", "hill", "lighting", "green", "signals", "loop"]),
+        code: z.enum([
+          "flat",
+          "hill",
+          "lighting",
+          "green",
+          "signals",
+          "loop",
+          "destination",
+        ]),
         title: z.string(),
         description: z.string(),
       }),
@@ -65,11 +92,24 @@ export const courseSchema = z
   .superRefine((course, ctx) => {
     const start = course.geometry.coordinates[0]!;
     const end = course.geometry.coordinates.at(-1)!;
-    if (haversine(start, end) > 20)
+    if (course.route_type === "loop" && haversine(start, end) > 20)
       ctx.addIssue({
         code: "custom",
         path: ["geometry"],
         message: "회귀 코스의 시작과 끝은 20m 이내여야 합니다.",
+      });
+    if (
+      course.route_type === "straight" &&
+      (!course.end ||
+        !course.end_label ||
+        haversine(start, end) < 50 ||
+        (course.end && haversine(end, course.end) > 20))
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["end"],
+        message:
+          "Straight 코스는 출발지와 다른 목적지·이름이 필요하며 경로 끝점은 목적지 20m 이내여야 합니다.",
       });
     let previous = -1;
     for (const segment of course.segments) {
@@ -106,6 +146,26 @@ export const recommendationResponseSchema = z.object({
 export type RecommendationResponse = z.infer<
   typeof recommendationResponseSchema
 >;
+
+export function parseRecommendations(
+  value: unknown,
+  request: RecommendationRequest,
+): RecommendationResponse {
+  const response = recommendationResponseSchema.parse(value);
+  for (const course of response.courses) {
+    if (
+      course.route_type !== request.route_type ||
+      haversine(course.geometry.coordinates[0]!, request.start) > 50
+    )
+      throw new Error("요청한 러닝 방식 또는 출발지와 다른 코스가 도착했어요.");
+    if (
+      request.route_type === "straight" &&
+      haversine(course.geometry.coordinates.at(-1)!, request.end) > 50
+    )
+      throw new Error("요청한 목적지와 다른 코스가 도착했어요.");
+  }
+  return response;
+}
 
 export const edgePropertiesSchema = z.object({
   edge_id: z.string().min(1),

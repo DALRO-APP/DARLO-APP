@@ -22,8 +22,13 @@ export default function RootLayout() {
             }}
           >
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="explore" />
+            <Stack.Screen name="route-type" />
             <Stack.Screen name="course/[id]" />
             <Stack.Screen name="run" />
+            <Stack.Screen name="recommendations" />
+            <Stack.Screen name="result" />
+            <Stack.Screen name="saved" />
           </Stack>
         </SafeAreaView>
       </QueryClientProvider>

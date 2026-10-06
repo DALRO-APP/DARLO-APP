@@ -5,6 +5,7 @@ import {
   haversine,
   recommendationRequestSchema,
   roadNetworkSchema,
+  lineDistance,
 } from "./contracts";
 import { makeMockCourse } from "../data/mock";
 import { STARTS } from "./catalog";
@@ -26,6 +27,7 @@ describe("데이터 경계와 회귀 경로 계약", () => {
           const course = makeMockCourse(
             {
               ...request,
+              route_type: "loop",
               start: start.coordinate,
               target_distance_m: distance,
             },
@@ -105,5 +107,94 @@ describe("데이터 경계와 회귀 경로 계약", () => {
       recommendationRequestSchema.safeParse({ ...request, purpose: "FASTEST" })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("Straight 출발·목적지 계약", () => {
+  const straight = recommendationRequestSchema.parse({
+    ...request,
+    route_type: "straight",
+    end: STARTS[1]!.coordinate,
+    target_distance_m: null,
+  });
+  it.each(["PACE", "POWER", "NIGHT", "GREEN"] as const)(
+    "%s 후보 세 개가 선택한 두 장소를 정확히 잇는다",
+    (purpose) => {
+      for (const start of STARTS)
+        for (const end of STARTS.filter((place) => place.id !== start.id)) {
+          const courses = [0, 1, 2].map((rank) =>
+            makeMockCourse(
+              {
+                ...straight,
+                route_type: "straight",
+                target_distance_m: null,
+                start: start.coordinate,
+                end: end.coordinate,
+              },
+              purpose,
+              rank,
+            ),
+          );
+          for (const course of courses) {
+            expect(course.route_type).toBe("straight");
+            expect(course.geometry.coordinates[0]).toEqual(start.coordinate);
+            expect(course.geometry.coordinates.at(-1)).toEqual(end.coordinate);
+            expect(course.end_label).toBe(end.label);
+            expect(
+              Math.abs(
+                lineDistance(course.geometry.coordinates) -
+                  course.summary.distance_m,
+              ),
+            ).toBeLessThan(1);
+          }
+          expect(
+            new Set(courses.map((course) => JSON.stringify(course.geometry)))
+              .size,
+          ).toBe(3);
+        }
+    },
+  );
+  it("목적지 누락·동일 장소·숫자 목표 거리를 거부한다", () => {
+    expect(
+      recommendationRequestSchema.safeParse({ ...straight, end: undefined })
+        .success,
+    ).toBe(false);
+    expect(
+      recommendationRequestSchema.safeParse({
+        ...straight,
+        end: straight.start,
+      }).success,
+    ).toBe(false);
+    expect(
+      recommendationRequestSchema.safeParse({
+        ...straight,
+        target_distance_m: 5000,
+      }).success,
+    ).toBe(false);
+  });
+  it("목적지와 끝점이 다른 코스와 회귀 코스를 Straight로 표시하면 거부한다", () => {
+    const course = makeMockCourse(straight, "PACE");
+    expect(
+      courseSchema.safeParse({ ...course, end: STARTS[2]!.coordinate }).success,
+    ).toBe(false);
+    expect(
+      courseSchema.safeParse({ ...course, end_label: undefined }).success,
+    ).toBe(false);
+    expect(
+      courseSchema.safeParse({
+        ...makeMockCourse(request, "PACE"),
+        route_type: "straight",
+        end: straight.start,
+        end_label: "출발지",
+      }).success,
+    ).toBe(false);
+  });
+  it("기존 응답에 방식 필드가 없으면 Loop로 호환한다", () => {
+    expect(
+      courseSchema.parse({
+        ...makeMockCourse(request, "PACE"),
+        route_type: undefined,
+      }).route_type,
+    ).toBe("loop");
   });
 });

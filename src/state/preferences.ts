@@ -1,7 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type { RecommendationRequest } from "../domain/contracts";
+import {
+  recommendationRequestSchema,
+  type RecommendationRequest,
+} from "../domain/contracts";
 import { STARTS } from "../domain/catalog";
 const initial: RecommendationRequest = {
   schema_version: "1.0",
@@ -24,7 +27,12 @@ export const usePreferences = create<Preferences>()(
       request: initial,
       favorites: [],
       update: (patch) =>
-        set((state) => ({ request: { ...state.request, ...patch } })),
+        set((state) => ({
+          request: recommendationRequestSchema.parse({
+            ...state.request,
+            ...patch,
+          }),
+        })),
       toggleFavorite: (id) =>
         set((state) => ({
           favorites: state.favorites.includes(id)

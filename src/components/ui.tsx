@@ -134,14 +134,33 @@ export function Chip({
     </Pressable>
   );
 }
-export function Screen({ children }: { children: React.ReactNode }) {
+export function Screen({
+  children,
+  narrow = false,
+  compact = false,
+}: {
+  children: React.ReactNode;
+  narrow?: boolean;
+  compact?: boolean;
+}) {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
-      contentContainerStyle={styles.screen}
+      contentContainerStyle={[
+        styles.screen,
+        compact && { paddingTop: 16, paddingBottom: 24 },
+      ]}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.container}>{children}</View>
+      <View
+        style={[
+          styles.container,
+          narrow && { maxWidth: 640 },
+          compact && { gap: 18 },
+        ]}
+      >
+        {children}
+      </View>
     </ScrollView>
   );
 }
@@ -262,7 +281,7 @@ export const styles = StyleSheet.create({
   },
   chipSelected: { backgroundColor: colors.lime, borderColor: colors.lime },
   screen: { paddingHorizontal: 22, paddingTop: 26, paddingBottom: 36 },
-  container: { width: "100%", maxWidth: 1180, alignSelf: "center", gap: 26 },
+  container: { width: "100%", maxWidth: 1000, alignSelf: "center", gap: 24 },
   sectionHeading: {
     flexDirection: "row",
     alignItems: "center",

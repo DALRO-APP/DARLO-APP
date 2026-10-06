@@ -45,6 +45,24 @@ describe("native 지도 경계", () => {
       ]),
     );
   });
+  it("주행한 선과 남은 선을 나누고 러너가 두 선의 경계에 위치한다", () => {
+    const course = fixtures()[0]!;
+    const lines = nativeRoutes([course], course.id, 0.35);
+    const travelled = lines.find((line) => line.selected)!;
+    const remaining = lines.find((line) => !line.selected)!;
+    expect(travelled.points[0]).toEqual(
+      nativeCoordinate(course.geometry.coordinates[0]!),
+    );
+    expect(travelled.points.at(-1)).toEqual(nativeRunner(course, 0.35));
+    expect(remaining.points[0]).toEqual(nativeRunner(course, 0.35));
+    expect(remaining.points.at(-1)).toEqual(
+      nativeCoordinate(course.geometry.coordinates.at(-1)!),
+    );
+    expect(nativeRoutes([course], course.id, 1)).toHaveLength(1);
+    expect(nativeRoutes([course], course.id, Number.NaN)).toEqual(
+      nativeRoutes([course], course.id),
+    );
+  });
   it("코스 전체를 담는 중심/줌을 계산하고 작은 지도에서 더 넓게 보여준다", () => {
     const points = fixtures().flatMap((course) => course.geometry.coordinates);
     const large = nativeCamera(points, 1200, 700);
@@ -86,3 +104,27 @@ function fixtures() {
     makeMockCourse(request, purpose),
   );
 }
+
+it("Straight 도착 표시는 진행률과 무관하게 실제 목적지에 남는다", () => {
+  const end: [number, number] = [126.991, 37.5205];
+  const course = makeMockCourse(
+    {
+      schema_version: "1.0",
+      start: [126.9745, 37.5178],
+      end,
+      target_distance_m: null,
+      purpose: "PACE",
+      time_of_day: "day",
+      route_type: "straight",
+      distance_tolerance_ratio: 0.1,
+    },
+    "PACE",
+  );
+  for (const progress of [0, 0.4, 1]) {
+    expect(
+      nativeRoutes([course], course.id, progress).find((line) => line.selected)!
+        .end,
+    ).toEqual(nativeCoordinate(end));
+  }
+  expect(nativeRunner(course, 1)).toEqual(nativeCoordinate(end));
+});

@@ -1,9 +1,10 @@
 import { router } from "expo-router";
-import { useEffect } from "react";
-import { View } from "react-native";
-import { Mascot } from "../src/components/Mascot";
+import { useEffect, useState } from "react";
+import { ScrollView, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RouteMap } from "../src/components/RouteMap";
-import { Button, Panel, Screen, T, useWide } from "../src/components/ui";
+import { DemoNote, Metric } from "../src/components/Flow";
+import { Button, Chip, Screen, T } from "../src/components/ui";
 import {
   formatDistance,
   formatDuration,
@@ -11,24 +12,37 @@ import {
 } from "../src/domain/catalog";
 import { useRunning } from "../src/state/running";
 import { colors } from "../src/theme/tokens";
+
 export default function Run() {
   const session = useRunning((s) => s.session);
+  const draft = useRunning((s) => s.draft);
   const tick = useRunning((s) => s.tick);
   const pause = useRunning((s) => s.togglePause);
   const finish = useRunning((s) => s.finish);
-  const wide = useWide();
+  const [controls, setControls] = useState(false);
+  const { height, width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     const timer = setInterval(() => tick(1), 1000);
     return () => clearInterval(timer);
   }, [tick]);
   if (!session)
     return (
-      <Screen>
-        <Mascot size={120} />
-        <T style={{ fontSize: 24, fontWeight: "800" }}>
+      <Screen narrow>
+        <T style={{ fontSize: 24, fontWeight: "700" }}>
           아직 시작한 러닝이 없어요.
         </T>
-        <Button label="코스 고르러 가기" onPress={() => router.replace("/")} />
+        <Button
+          label={draft ? "지난 러닝 결과 확인" : "코스 고르러 가기"}
+          onPress={() =>
+            draft
+              ? router.replace({
+                  pathname: "/result",
+                  params: { id: draft.id },
+                })
+              : router.replace("/")
+          }
+        />
       </Screen>
     );
   const progress =
@@ -37,148 +51,139 @@ export default function Run() {
   const complete = progress >= 1;
   const end = () => {
     const id = finish();
-    if (id) router.replace({ pathname: "/records", params: { id } });
+    if (id) router.replace({ pathname: "/result", params: { id } });
   };
   return (
-    <Screen>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{
+        padding: 16,
+        paddingBottom: Math.max(insets.bottom, 16),
+        gap: 16,
+        maxWidth: 1000,
+        width: "100%",
+        alignSelf: "center",
+      }}
+    >
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
+          gap: 12,
         }}
       >
-        <View style={{ gap: 8 }}>
-          <T accent style={{ fontSize: 11, letterSpacing: 2 }}>
-            RUNNING WITH DALRO
-          </T>
-          <T style={{ fontSize: 30, fontWeight: "900", letterSpacing: -1 }}>
-            {complete
-              ? "잘 달렸어요!"
-              : session.running
-                ? "지금, 나의 속도로."
-                : "잠깐 숨을 고르세요."}
-          </T>
-        </View>
-        <Mascot size={80} celebrate={complete} />
+        <T style={{ fontWeight: "700", fontSize: 16 }}>
+          {session.course.purpose} ·{" "}
+          {(session.course.summary.distance_m / 1000).toFixed(1)}km
+        </T>
+        <T accent style={{ fontSize: 12 }}>
+          {complete
+            ? "완주했어요"
+            : session.running
+              ? "모의 러닝 중"
+              : "일시정지"}
+        </T>
       </View>
-      <T muted style={{ fontSize: 12 }}>
-        {session.course.name} · 모의 러닝
-      </T>
       <RouteMap
         courses={[session.course]}
         selectedId={session.course.id}
         progress={progress}
-        height={wide ? 400 : 320}
+        showLabels={false}
+        height={Math.max(
+          260,
+          Math.min(600, height - insets.top - insets.bottom - 335),
+        )}
       />
-      <Panel style={{ padding: 24, gap: 23 }}>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            gap: 12,
-          }}
-        >
-          {[
-            { value: formatDistance(distance), unit: "km", label: "달린 거리" },
-            {
-              value: formatDuration(session.elapsed),
-              unit: "",
-              label: "러닝 시간",
-            },
-            {
-              value: formatPace(session.elapsed, distance),
-              unit: "",
-              label: "평균 페이스",
-            },
-          ].map((m) => (
-            <View key={m.label} style={{ alignItems: "center", gap: 9 }}>
-              <T accent style={{ fontSize: wide ? 36 : 27, fontWeight: "800" }}>
-                {m.value}
-                <T accent style={{ fontSize: 12 }}>
-                  {" "}
-                  {m.unit}
-                </T>
-              </T>
-              <T muted style={{ fontSize: 11 }}>
-                {m.label}
-              </T>
-            </View>
-          ))}
-        </View>
-        <View
-          style={{
-            height: 6,
-            borderRadius: 10,
-            backgroundColor: colors.line,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              height: 6,
-              width: `${Math.round(progress * 100)}%`,
-              backgroundColor: colors.lime,
-            }}
+      <View style={{ gap: 14, paddingHorizontal: 6 }}>
+        <View style={{ flexDirection: "row", gap: 20 }}>
+          <Metric
+            value={formatDuration(session.elapsed)}
+            label="시간"
+            large={width >= 360}
+          />
+          <Metric
+            value={`${formatDistance(distance)} km`}
+            label="거리"
+            large={width >= 360}
           />
         </View>
-        <T muted style={{ fontSize: 11, textAlign: "center" }}>
-          목표 {(session.course.summary.distance_m / 1000).toFixed(1)}km 중{" "}
-          {Math.round(progress * 100)}% 달성
+        <View style={{ flexDirection: "row", gap: 20 }}>
+          <Metric
+            value={formatPace(session.elapsed, distance)}
+            label="현재 페이스 /km"
+          />
+          <Metric
+            value={formatPace(session.elapsed, distance)}
+            label="평균 페이스 /km"
+          />
+        </View>
+      </View>
+      {session.running ? (
+        <Button label="일시정지" icon="pause" secondary onPress={pause} />
+      ) : (
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          {!complete && (
+            <Button
+              style={{ flex: 1 }}
+              label="계속하기"
+              secondary
+              icon="play"
+              onPress={pause}
+            />
+          )}
+          <Button
+            style={{ flex: 1 }}
+            label="러닝 종료"
+            icon="checkmark"
+            disabled={session.elapsed <= 0}
+            onPress={end}
+          />
+        </View>
+      )}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
+        <T muted style={{ fontSize: 10 }}>
+          GPS 미수집 · 일정한 속도로 모의 이동
         </T>
-      </Panel>
-      <View style={{ flexDirection: "row", gap: 12 }}>
-        <Button
-          style={{ flex: 1 }}
-          label={session.running ? "일시정지" : "계속 달리기"}
-          secondary
-          icon={session.running ? "pause" : "play"}
-          onPress={pause}
-          disabled={complete}
-        />
-        <Button
-          style={{ flex: 1 }}
-          label="러닝 마치기"
-          icon="checkmark"
-          disabled={session.elapsed <= 0}
-          onPress={end}
+        <Chip
+          label={controls ? "시연 도구 닫기" : "시연 도구"}
+          onPress={() => setControls(!controls)}
         />
       </View>
-      <Panel style={{ padding: 18, gap: 13 }}>
-        <T style={{ fontSize: 13, fontWeight: "700" }}>발표용 시연 컨트롤</T>
-        <T muted style={{ fontSize: 11, lineHeight: 19 }}>
-          GPS를 수집하지 않습니다. 시간과 위치는 코스를 따라 모의로 이동하며,
-          아래 버튼으로 빠르게 진행할 수 있어요.
-        </T>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Button
-            style={{ flex: 1 }}
-            label="시연 1분 이동"
-            secondary
-            icon="play-forward"
-            onPress={() => tick(60)}
-            disabled={!session.running || complete}
-          />
-          <Button
-            style={{ flex: 1 }}
-            label="완주 시연"
-            secondary
-            icon="flag-outline"
-            onPress={() =>
-              tick(
-                session.course.summary.estimated_duration_s - session.elapsed,
-              )
-            }
-            disabled={!session.running || complete}
-          />
+      {controls && (
+        <View style={{ gap: 12 }}>
+          <DemoNote running />
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Button
+              style={{ flex: 1 }}
+              label="시연 1분 이동"
+              secondary
+              icon="play-forward"
+              disabled={!session.running || complete}
+              onPress={() => tick(60)}
+            />
+            <Button
+              style={{ flex: 1 }}
+              label="완주 시연"
+              secondary
+              icon="flag-outline"
+              disabled={!session.running || complete}
+              onPress={() =>
+                tick(
+                  session.course.summary.estimated_duration_s - session.elapsed,
+                )
+              }
+            />
+          </View>
         </View>
-      </Panel>
-      <Button
-        label="홈으로 돌아가기"
-        secondary
-        icon="home-outline"
-        onPress={() => router.replace("/")}
-      />
-    </Screen>
+      )}
+    </ScrollView>
   );
 }

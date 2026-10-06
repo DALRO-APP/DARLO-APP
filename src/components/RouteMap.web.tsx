@@ -13,6 +13,7 @@ import {
   type RouteMapProps,
 } from "./RouteMapOffline";
 import { Button, Icon, T } from "./ui";
+import { routeProgress } from "../maps/progress";
 export type { RouteMapProps } from "./RouteMapOffline";
 
 function marker(text: string, color: string): HTMLDivElement {
@@ -128,11 +129,28 @@ function KakaoRouteMap({
       const start = new maps.CustomOverlay({
         map: instance,
         position: point(selected.geometry.coordinates[0]!),
-        content: marker(showLabels ? "● 출발 · 도착" : "●", colors.lime),
+        content: marker(
+          showLabels
+            ? selected.route_type === "straight"
+              ? "● 출발"
+              : "● 출발 · 도착"
+            : "●",
+          colors.lime,
+        ),
         yAnchor: 1.25,
         zIndex: 5,
       });
       overlays.push({ overlay: start });
+      if (selected.route_type === "straight") {
+        const end = new maps.CustomOverlay({
+          map: instance,
+          position: point(selected.geometry.coordinates.at(-1)!),
+          content: marker(showLabels ? "● 도착" : "●", "#C6B6FF"),
+          yAnchor: 1.3,
+          zIndex: 4,
+        });
+        overlays.push({ overlay: end });
+      }
     }
     return () => {
       overlays.forEach(({ overlay, click }) => {
@@ -162,14 +180,17 @@ function KakaoRouteMap({
     )
       return;
     const maps = sdk.current;
-    const index = Math.min(
-      selected.geometry.coordinates.length - 1,
-      Math.floor(
-        Math.max(0, Math.min(1, progress)) *
-          (selected.geometry.coordinates.length - 1),
-      ),
-    );
-    const [lon, lat] = selected.geometry.coordinates[index]!;
+    const trail = routeProgress(selected.geometry.coordinates, progress);
+    if (!trail) return;
+    const travelled = new maps.Polyline({
+      map: map.current,
+      path: trail.travelled.map(([lon, lat]) => new maps.LatLng(lat, lon)),
+      strokeWeight: 7,
+      strokeColor: "#FFFFFF",
+      strokeOpacity: 1,
+      zIndex: 4,
+    });
+    const [lon, lat] = trail.position;
     const moving = new maps.CustomOverlay({
       map: map.current,
       position: new maps.LatLng(lat, lon),
@@ -179,6 +200,7 @@ function KakaoRouteMap({
     });
     return () => {
       moving.setMap(null);
+      travelled.setMap(null);
     };
   }, [selected, progress, status]);
 
@@ -254,7 +276,9 @@ function KakaoRouteMap({
         <Icon name="navigate" color={colors.lime} size={17} />
         <View style={{ flex: 1, gap: 3 }}>
           <T style={{ fontSize: 12, fontWeight: "700" }}>
-            {selected?.start_label ?? "용산구"}
+            {selected?.route_type === "straight"
+              ? `${selected.start_label} → ${selected.end_label}`
+              : (selected?.start_label ?? "용산구")}
           </T>
           <T muted style={{ fontSize: 10 }}>
             카카오 지도 · 코스 경로는 시연용
