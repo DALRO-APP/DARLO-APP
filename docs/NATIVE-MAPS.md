@@ -82,3 +82,9 @@ GitHub Actions의 `iOS native build`는 Mac에서 CocoaPods 설치 후 앱과 �
 - [로컬 Expo 모듈](https://docs.expo.dev/modules/get-started/)
 - [Kakao iOS 사용 등록](https://apis.map.kakao.com/ios_v2/docs/getting-started/basics/02_auth/)
 - [Kakao Android SDK 시작](https://apis.map.kakao.com/android_v2/docs/getting-started/quickstart/)
+
+## 2026-10-06 출발·도착 마커 변경
+
+Loop/Straight 화면을 분리하면서 JS의 `routesJson` 각 코스에 `end`를 추가했습니다. Loop와 남은 구간은 `null`, Straight는 전체 경로의 마지막 좌표 `{ latitude, longitude }`를 보냅니다. iOS와 Android 로컬 모듈이 선택된 Straight의 도착 마커를 표시합니다. 주행한 구간이 짧아져도 목적지는 고정됩니다. `RouteMapProps`는 유지합니다.
+
+이 변경은 native 소스를 포함하므로 기존 개발 앱에서는 새 마커가 적용되지 않습니다. **개발 앱을 다시 빌드해야 합니다.** 이번 환경에서는 preflight 결과 Xcode/iPhoneOS SDK와 Android SDK 경로가 준비되지 않아 플랫폼 컴파일·실기 렌더링을 확인하지 못했습니다. 웹 및 native JS export 성공은 네이티브 컴파일 성공을 의미하지 않습니다.
