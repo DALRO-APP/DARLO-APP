@@ -177,11 +177,12 @@ export default function Recommendations() {
                     ·{" "}
                     {course.summary.avg_slope_pct === null
                       ? "경사 미확인"
-                      : `평균 경사 ${course.summary.avg_slope_pct}%`}{" "}
+                      : // 실데이터 경사는 도로 주변 지형 경사 평균이다.
+                        `평균 ${course.is_mock ? "" : "지형 "}경사 ${course.summary.avg_slope_pct}%`}{" "}
                     ·{" "}
                     {course.summary.signal_count === null
                       ? "신호 미확인"
-                      : `신호 ${course.summary.signal_count}개`}
+                      : `${course.is_mock ? "신호" : "신호 부착대"} ${course.summary.signal_count}개`}
                   </T>
                   <T accent style={{ fontSize: 14, fontWeight: "700" }}>
                     {course.purpose} 환경 점수{" "}
@@ -204,7 +205,7 @@ export default function Recommendations() {
               })
             }
           />
-          <DemoNote />
+          <DemoNote mock={selected.is_mock} />
         </View>
       )}
     </Screen>

@@ -58,8 +58,9 @@ export const STARTS: {
   {
     id: "namsan",
     label: "남산 둘레길",
-    detail: "용산구 · 국립극장 방면",
-    coordinate: [126.995, 37.546],
+    // 국립극장 쪽은 중구라 용산구 도로망 밖이다. 차량이 통제되는 남측순환로 약수터 부근.
+    detail: "용산구 · 남측순환로 약수터 방면",
+    coordinate: [126.9992, 37.547],
   },
   {
     id: "yongsan",

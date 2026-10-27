@@ -18,3 +18,17 @@ jobs:
       - run: npm run export:android
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
+  server:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: server/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python -m pytest

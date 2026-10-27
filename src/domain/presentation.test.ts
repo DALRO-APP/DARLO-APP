@@ -43,4 +43,31 @@ describe("직접 입력 거리", () => {
     course.summary.green_ratio = 0;
     expect(courseExplanation(course)).toContain("0%");
   });
+  it("실제 추천은 고정 문구 대신 서버 근거를 보여준다", () => {
+    const course = makeMockCourse(
+      {
+        schema_version: "1.0",
+        start: STARTS[0]!.coordinate,
+        target_distance_m: 5000,
+        purpose: "PACE",
+        time_of_day: "day",
+        route_type: "loop",
+        distance_tolerance_ratio: 0.1,
+      },
+      "PACE",
+    );
+    expect(courseExplanation(course)).toContain("신호가 적어");
+    course.is_mock = false;
+    course.reasons = [
+      {
+        code: "signals",
+        title: "멈춤 요인 정보 반영",
+        description: "신호 부착대·횡단보도 km당 9.1곳 (용산구 도로 평균 5.1곳)",
+      },
+      { code: "loop", title: "출발지로 돌아오기", description: "제자리로" },
+    ];
+    expect(courseExplanation(course)).toBe(
+      "신호 부착대·횡단보도 km당 9.1곳 (용산구 도로 평균 5.1곳)",
+    );
+  });
 });

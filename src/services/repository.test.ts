@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { MockCourseRepository, HttpCourseRepository } from "./repository";
+import {
+  MockCourseRepository,
+  HttpCourseRepository,
+  RoutedCourseRepository,
+} from "./repository";
 import { STARTS } from "../domain/catalog";
 import { recommendationRequestSchema } from "../domain/contracts";
 import { makeMockCourse } from "../data/mock";
@@ -84,6 +88,46 @@ describe("추천 저장소 교체 계약", () => {
     await expect(
       new HttpCourseRepository("https://api.example.com").recommend(request),
     ).rejects.toThrow("다시 시도");
+  });
+});
+
+describe("목적별 서버/더미 분기(hybrid)", () => {
+  const fake = () => ({ recommend: vi.fn(), getCourse: vi.fn() });
+  it("서버 목적만 HTTP로 보내고 나머지는 더미로 보낸다", async () => {
+    const server = fake();
+    const demo = fake();
+    const repository = new RoutedCourseRepository(
+      server,
+      demo,
+      new Set(["PACE"]),
+    );
+    await repository.recommend({ ...request, purpose: "PACE" });
+    await repository.recommend(request);
+    expect(server.recommend).toHaveBeenCalledTimes(1);
+    expect(demo.recommend).toHaveBeenCalledTimes(1);
+    expect(server.recommend.mock.calls[0]![0].purpose).toBe("PACE");
+  });
+  it("더미 상세 URL과 서버 코스 ID를 구분해 조회한다", async () => {
+    const server = fake();
+    const demo = fake();
+    const repository = new RoutedCourseRepository(
+      server,
+      demo,
+      new Set(["PACE"]),
+    );
+    const mock = await new MockCourseRepository().recommend({
+      ...request,
+      purpose: "PACE",
+    });
+    for (const course of mock.courses) await repository.getCourse(course.id);
+    await repository.getCourse("straight-pace-ichon-namsan-day-1");
+    await repository.getCourse("pace-loop-3f2a9c1b7d4e");
+    await repository.getCourse("pace-straight-0a1b2c3d4e5f");
+    expect(demo.getCourse).toHaveBeenCalledTimes(4);
+    expect(server.getCourse.mock.calls.map((c) => c[0])).toEqual([
+      "pace-loop-3f2a9c1b7d4e",
+      "pace-straight-0a1b2c3d4e5f",
+    ]);
   });
 });
 

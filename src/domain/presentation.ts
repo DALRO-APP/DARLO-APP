@@ -2,6 +2,12 @@ import type { Course } from "./contracts";
 
 // 코스 환경 설명이며 주행 분석 또는 안전 판정이 아닙니다.
 export function courseExplanation(course: Course): string {
+  // 실제 추천은 서버가 계산한 근거를 그대로 보여주고 고정 문구로 단정하지 않는다.
+  const evidence = course.reasons.filter(
+    (r) => r.code === "signals" || r.code === "flat",
+  );
+  if (!course.is_mock && evidence.length)
+    return evidence.map((r) => r.description).join(" · ");
   switch (course.purpose) {
     case "PACE":
       return "경사가 완만하고 신호가 적어 리듬을 유지하기 좋아요.";

@@ -316,7 +316,7 @@ test("Straight 방식 → 출발·목적지 선택과 교환 → 추천 → 완�
       ).options.position;
       return { start: active[0], end: active.at(-1), destination };
     });
-    expect(endpoints.start).toEqual({ lat: 37.546, lon: 126.995 });
+    expect(endpoints.start).toEqual({ lat: 37.547, lon: 126.9992 });
     expect(endpoints.end).toEqual({ lat: 37.5178, lon: 126.9745 });
     expect(endpoints.destination).toEqual(endpoints.end);
   }

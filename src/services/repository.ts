@@ -142,14 +142,52 @@ export class HttpCourseRepository implements CourseRepository {
     );
   }
 }
+// 서버가 구현한 목적만 HTTP로 보내고 나머지는 더미로 시연한다. 장애 시
+// 전환이 아니라 목적별 고정 경로이며, 코스의 is_mock으로 화면에 구분한다.
+export class RoutedCourseRepository implements CourseRepository {
+  constructor(
+    private readonly server: CourseRepository,
+    private readonly demo: CourseRepository,
+    private readonly serverPurposes: ReadonlySet<Purpose>,
+  ) {}
+  recommend(request: RecommendationRequest, signal?: AbortSignal) {
+    return (
+      this.serverPurposes.has(request.purpose) ? this.server : this.demo
+    ).recommend(request, signal);
+  }
+  getCourse(id: string, signal?: AbortSignal) {
+    return (isMockCourseId(id) ? this.demo : this.server).getCourse(id, signal);
+  }
+}
+export const isMockCourseId = (id: string) =>
+  /^(straight-)?(pace|power|night|green)-(ichon|namsan|yongsan|custom)-/.test(
+    id,
+  );
 const source = process.env.EXPO_PUBLIC_DATA_SOURCE ?? "mock";
 const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-if (source !== "mock" && source !== "http")
-  throw new Error("EXPO_PUBLIC_DATA_SOURCE는 mock 또는 http여야 합니다.");
-if (source === "http" && !apiUrl)
-  throw new Error("http 모드에는 EXPO_PUBLIC_API_URL이 필요합니다.");
+if (source !== "mock" && source !== "http" && source !== "hybrid")
+  throw new Error(
+    "EXPO_PUBLIC_DATA_SOURCE는 mock, http, hybrid 중 하나여야 합니다.",
+  );
+if (source !== "mock" && !apiUrl)
+  throw new Error(`${source} 모드에는 EXPO_PUBLIC_API_URL이 필요합니다.`);
+export const serverPurposes = new Set(
+  (process.env.EXPO_PUBLIC_SERVER_PURPOSES ?? "PACE")
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p): p is Purpose =>
+      ["PACE", "POWER", "NIGHT", "GREEN"].includes(p),
+    ),
+);
 export const courseRepository: CourseRepository =
   source === "http"
     ? new HttpCourseRepository(apiUrl!)
-    : new MockCourseRepository();
+    : source === "hybrid"
+      ? new RoutedCourseRepository(
+          new HttpCourseRepository(apiUrl!),
+          new MockCourseRepository(),
+          serverPurposes,
+        )
+      : new MockCourseRepository();
+export const dataSource = source;
 export const isDemo = source === "mock";

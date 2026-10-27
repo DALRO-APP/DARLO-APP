@@ -5,7 +5,7 @@ import { Button, Panel, Screen, T } from "../../src/components/ui";
 import { usePreferences } from "../../src/state/preferences";
 import { useRunning } from "../../src/state/running";
 import { formatDistance, PURPOSES } from "../../src/domain/catalog";
-import { isDemo } from "../../src/services/repository";
+import { dataSource, serverPurposes } from "../../src/services/repository";
 
 export default function Profile() {
   const favorites = usePreferences((s) => s.favorites);
@@ -59,7 +59,12 @@ export default function Profile() {
         </T>
       </Panel>
       <T muted style={{ fontSize: 11, lineHeight: 20 }}>
-        DALRO v0.1.0 · {isDemo ? "더미 데이터 모드" : "서버 연결 모드"}
+        DALRO v0.1.0 ·{" "}
+        {dataSource === "mock"
+          ? "더미 데이터 모드"
+          : dataSource === "hybrid"
+            ? `${[...serverPurposes].join("·")} 서버 + 더미 모드`
+            : "서버 연결 모드"}
         {"\n"}코스와 모의 기록은 이 기기에 보관돼요.{"\n"}GPS 측정·인증·서버
         동기화는 준비 중이에요.
       </T>
