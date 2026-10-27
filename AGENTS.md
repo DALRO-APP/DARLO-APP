@@ -4,7 +4,7 @@
 
 DALRO는 도시 공간정보를 이용한 개인 맞춤 러닝 코스 추천 앱이다. 이 저장소는 Expo SDK 57 + React Native + TypeScript 프론트엔드다. 파일 라우팅은 Expo Router, 앱 상태는 Zustand, 서버 조회는 TanStack Query를 사용한다.
 
-현재 목표는 **용산구 더미 데이터로 교수님께 앱 흐름을 시연**하는 것이다. PACE·POWER·NIGHT·GREEN 목적, 출발지, 3/5/8km, 주야간 조건과 출발지로 돌아오는 루프 코스를 다룬다. 실제 공간 분석·추천 알고리즘·PostGIS·인증·GPS 수집은 후속 작업이다.
+현재 목표는 **용산구 데이터로 교수님께 앱 흐름을 시연**하는 것이다. PACE·POWER·NIGHT·GREEN 목적, 출발지, 거리, 주야간 조건과 Loop/Straight 코스를 다룬다. PACE는 `server/`(FastAPI·SQLAlchemy·SQLite)가 팀 전처리 실데이터로 추천한다. 나머지 목적의 알고리즘·PostGIS·인증·GPS 수집은 후속 작업이다.
 
 ## 작업 원칙
 
@@ -13,7 +13,7 @@ DALRO는 도시 공간정보를 이용한 개인 맞춤 러닝 코스 추천 앱
 - 운영 서비스 규칙을 이 데모에 무조건 적용하지 않는다. 커밋·push·배포·외부 문서 변경은 요청한 경우에만 한다. 팀원에게 메시지나 메일을 보내지 않는다.
 - `.env` 비밀값을 출력하지 않는다. `EXPO_PUBLIC_*`는 공개 앱 번들에 포함되므로 토큰·DB 비밀번호를 넣지 않는다.
 - 의존성은 SDK 57의 `node_modules/expo/bundledNativeModules.json`과 `npx expo install --check`로 맞춘다. lockfile도 함께 관리한다.
-- 조회되지 않은 자료를 확인했다고 보고하지 않는다. 현재 노션 실제 자료는 연결이 없어 미확인이다. PDF와 카톡의 확인된 내용만 근거로 사용한다.
+- 조회되지 않은 자료를 확인했다고 보고하지 않는다. 노션 '데이터 저장소'는 Notion MCP로 조회·첨부 다운로드할 수 있다(2026-10-27). 확인한 첨부와 사실은 `docs/2026-10-27-pace-실데이터-서버.md`에 있다. 원본 zip·SQLite는 `server/data/`에 두고 커밋하지 않는다.
 
 ## 구조와 탐색
 
@@ -31,6 +31,7 @@ src/state/                 Zustand 입력·즐겨찾기·기록
 src/data/                  명시적인 더미 코스
 src/theme/                 색상 토큰
 examples/data/             실행 검사 가능한 전달 예시 4종
+server/                    PACE 추천 FastAPI 서버(임포트·그래프·라우팅·pytest)
 scripts/                   자료 검사·예시 생성·웹 시연 서버
  tests/                    모바일/데스크톱 웹 시연 E2E
  docs/                     데이터 전달·시연·의사결정·JSON Schema
@@ -60,6 +61,7 @@ npm run export:ios
 npm run export:android
 npx expo install --check
 npx playwright test       # web export 후, Chromium 설치 필요
+cd server && .venv/bin/python -m pytest   # 서버 변경 시
 ```
 
 계약·상태 변경에 의미 있는 경계·회귀 테스트를 갱신한다. 사소한 스타일 변경에 구현을 반복하는 테스트를 만들지 않는다. 검증 실패를 테스트 삭제나 assertion 완화로 숨기지 않는다. 변경 범위 검증부터 실행하고 이유 없이 반복하지 않는다.
