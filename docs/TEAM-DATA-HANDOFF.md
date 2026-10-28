@@ -93,6 +93,8 @@ yongsan-running-v1/
 
 UI는 3/5/7/10km와 직접 입력(1~20km)을 제공합니다. 기존 8km 조건은 직접 입력으로 복원합니다. 계약은 1~20km이고 실제 알고리즘 지원 범위는 서버에서 검증합니다. 목적은 PACE/POWER/NIGHT/GREEN, 시간 조건은 day/night입니다. 야간 PACE면 평탄함과 조명을 함께 반영하므로 목적과 시간 조건을 구분합니다. 홈에서 NIGHT를 고르면 야간으로 시작하며 설정에서 바꿀 수 있습니다. mock은 선택 목적의 후보 세 개를 반환하지만 HTTP 응답은 기존 0~3개 계약을 유지합니다.
 
+앱이 검색한 장소 이름을 `start_label`(Straight는 `end_label`도)로 함께 보낼 수 있습니다. 1~40자, 선택 필드입니다. 서버는 이 값을 코스의 `start_label`/`end_label`로 씁니다. 베타 범위는 용산구이며, 범위 밖 요청은 422와 사용자용 `detail` 문장으로 거부합니다([장소 검색 결정](2026-10-28-장소-검색-베타-범위.md)).
+
 Straight 요청은 `route_type: "straight"`, `end: [경도, 위도]`, `target_distance_m: null`을 보냅니다. 두 장소는 50m 이상 떨어져 있어야 하며, 목적지까지의 거리와 시간은 응답 geometry에서 계산합니다. 사용자에게 거리 선택을 추가로 받지 않습니다. Loop 요청 형식은 유지합니다. 예시: [request-straight.json](../examples/data/request-straight.json), [recommendations-straight.json](../examples/data/recommendations-straight.json). HTTP 서버도 두 방식을 지원하도록 확장해야 하며 지원하지 않으면 오류를 표시합니다. mock으로 몰래 전환하지 않습니다.
 
 출발점을 보행 도로/노드로 스냅하되 원래 위치에서 50m 이내를 기본값으로 제안합니다. 불가능하면 임의로 먼 곳으로 이동하지 말고 오류나 대안 출발점을 반환합니다.
