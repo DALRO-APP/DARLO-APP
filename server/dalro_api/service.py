@@ -3,6 +3,7 @@ import uuid
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from .config import SNAP_RADIUS_M
 from .courses import build_course, place_label
 from .graph import Overlay, RoadGraph
 from .models import RecommendationLog, StoredCourse
@@ -28,10 +29,13 @@ class RecommendationService:
             raise UnsupportedPurpose(f"{request.purpose} 추천은 아직 서버에 구현되지 않았어요. 현재는 PACE만 지원합니다.")
         began = time.perf_counter()
         overlay = Overlay(self.graph)
+        for point in (request.start, getattr(request, "end", None)):
+            if point is not None and not self.graph.in_service_area(point, margin_m=SNAP_RADIUS_M):
+                raise StartNotCovered(f"베타 버전은 {self.graph.service_area_name} 안에서만 코스를 추천해요.")
         start = self.graph.snap(request.start, overlay)
         if start is None:
             raise StartNotCovered("출발지 50m 안에 탐색 가능한 용산구 도로가 없어요.")
-        start_label = place_label(request.start, "선택한 출발지")
+        start_label = request.start_label or place_label(request.start, "선택한 출발지")
         if request.route_type == "loop":
             candidates = loop_candidates(
                 overlay, start.node, request.target_distance_m, request.distance_tolerance_ratio
@@ -44,7 +48,7 @@ class RecommendationService:
             end = self.graph.snap(request.end, overlay)
             if end is None:
                 raise StartNotCovered("목적지 50m 안에 탐색 가능한 용산구 도로가 없어요.")
-            end_label = place_label(request.end, "선택한 목적지")
+            end_label = request.end_label or place_label(request.end, "선택한 목적지")
             candidates = straight_candidates(overlay, start.node, end.node) if end.node != start.node else []
             courses = [
                 build_course(

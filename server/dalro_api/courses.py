@@ -189,7 +189,7 @@ def build_course(
     )
     edge_ids = [e.edge_id for e in edges]
     digest = hashlib.sha1(
-        "|".join([graph.version, ALGORITHM_VERSION, time_of_day, *edge_ids]).encode()
+        "|".join([graph.version, ALGORITHM_VERSION, time_of_day, start_label, end_label or "", *edge_ids]).encode()
     ).hexdigest()[:12]
     course = {
         "id": f"pace-{route_type}-{digest}",

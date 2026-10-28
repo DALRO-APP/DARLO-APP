@@ -92,6 +92,34 @@ class Facility(Base):
     wkb: Mapped[bytes] = mapped_column(LargeBinary)  # EPSG:5186
 
 
+class ServiceArea(Base):
+    """베타 서비스 범위(용산구 행정경계)."""
+
+    __tablename__ = "service_areas"
+
+    version: Mapped[str] = mapped_column(
+        ForeignKey("network_versions.version", ondelete="CASCADE"), primary_key=True
+    )
+    name: Mapped[str] = mapped_column(String)
+    wkb: Mapped[bytes] = mapped_column(LargeBinary)  # EPSG:5186
+
+
+class Place(Base):
+    """카카오 키가 없어도 쓰는 로컬 장소 검색 색인(도로명·공원)."""
+
+    __tablename__ = "places"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    version: Mapped[str] = mapped_column(
+        ForeignKey("network_versions.version", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String, index=True)
+    category: Mapped[str] = mapped_column(String)
+    address: Mapped[str] = mapped_column(String)  # 소속 자치구
+    lon: Mapped[float] = mapped_column(Float)
+    lat: Mapped[float] = mapped_column(Float)
+
+
 class StoredCourse(Base):
     """GET /v1/courses/{id}가 서버 재시작 뒤에도 같은 코스를 돌려주도록 보관."""
 

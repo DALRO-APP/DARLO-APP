@@ -32,7 +32,9 @@ from . import pace
 from .config import FACILITY_BUFFER_M, NON_WALKABLE_FCLASS
 from .db import init_db, make_engine, session_factory
 from .geo import gpkg_geometry, to_lonlat, to_xy
-from .models import Facility, NetworkVersion, RoadEdge, RoadNode
+from .models import Base, Facility, NetworkVersion, Place, RoadEdge, RoadNode, ServiceArea
+
+NETWORK_TABLES = (Place, ServiceArea, Facility, RoadEdge, RoadNode, NetworkVersion)
 
 ROADS_ZIP = "verified_yongsan_roads.zip"
 ROADS_MEMBER = "yongsan_running_roads_final_verified.gpkg"
@@ -181,6 +183,81 @@ def read_facilities(raw: Path, tmp: Path, bounds: tuple[float, float, float, flo
     return facilities
 
 
+SERVICE_AREA_NAME = "용산구"
+
+
+def read_districts(raw: Path, tmp: Path) -> dict[str, shapely.Geometry]:
+    """서울 25개 자치구 경계(EPSG:5186)."""
+    stem = "seoul_district_boundary_5186"
+    files = extract(raw / SIGNAL_ZIP, {f"{stem}.{ext}" for ext in ("shp", "shx", "dbf", "prj")}, tmp)
+    reader = shapefile.Reader(str(files[f"{stem}.shp"])[:-4], encoding="utf-8", encodingErrors="replace")
+    names = [f[0] for f in reader.fields[1:]]
+    try:
+        return {
+            item.record[names.index("SIGUNGU_NM")]: shapely.make_valid(geo_shape(item.shape.__geo_interface__))
+            for item in reader.iterShapeRecords()
+        }
+    finally:
+        reader.close()
+
+
+Point = tuple[float, float]
+
+
+def read_parks(tmp: Path, area: shapely.Geometry) -> list[tuple[str, Point]]:
+    """서울 공원 이름과 대표점. 용산구와 겹치는 공원은 구 안의 점을 쓴다."""
+    con = sqlite3.connect(f"file:{tmp / LIGHT_MEMBER}?mode=ro", uri=True)
+    rows = con.execute('select "LABEL", geom from seoul_parks_5186 where "LABEL" is not null').fetchall()
+    con.close()
+    parks: dict[str, Point] = {}
+    for label, blob in rows:
+        label = label.strip()
+        geom = shapely.make_valid(gpkg_geometry(blob))
+        inside = geom.intersection(area)
+        point = (inside if not inside.is_empty else geom).representative_point()
+        if label not in parks or not inside.is_empty:
+            parks[label] = (point.x, point.y)
+    return sorted(parks.items())
+
+
+def read_seoul_roads(raw: Path, tmp: Path) -> list[tuple[str, Point]]:
+    """서울 전체 도로명마다 가장 긴 피처의 중간점. 용산구 밖 장소 검색용."""
+    stem = "seoul_running_roads"
+    files = extract(raw / SIGNAL_ZIP, {f"{stem}.{ext}" for ext in ("shp", "shx", "dbf", "prj")}, tmp)
+    reader = shapefile.Reader(str(files[f"{stem}.shp"])[:-4], encoding="utf-8", encodingErrors="replace")
+    name_index = [f[0] for f in reader.fields[1:]].index("name")
+    longest: dict[str, tuple[float, shapely.Geometry]] = {}
+    try:
+        for item in reader.iterShapeRecords():
+            name = (item.record[name_index] or "").strip()
+            if not name or ASCII_NAME.fullmatch(name):
+                continue
+            geom = geo_shape(item.shape.__geo_interface__)
+            if name not in longest or geom.length > longest[name][0]:
+                longest[name] = (geom.length, geom)
+    finally:
+        reader.close()
+    out = []
+    for name, (_, geom) in sorted(longest.items()):
+        point = geom.interpolate(0.5, normalized=True)
+        out.append((name, (point.x, point.y)))
+    return out
+
+
+def road_places(edge_rows: list[dict]) -> list[tuple[str, Point]]:
+    """도로명마다 가장 긴 통행 가능 구간의 중간점."""
+    longest: dict[str, dict] = {}
+    for row in edge_rows:
+        name = row["name"]
+        if row["walkable"] and name and (name not in longest or row["length_m"] > longest[name]["length_m"]):
+            longest[name] = row
+    out = []
+    for name, row in sorted(longest.items()):
+        point = shapely.LineString(row["coords_xy"]).interpolate(0.5, normalized=True)
+        out.append((name, (point.x, point.y)))
+    return out
+
+
 def count_near(lines: np.ndarray, facilities, kind: str) -> np.ndarray:
     geoms = [g for k, _, g in facilities if k == kind]
     if not geoms:
@@ -279,6 +356,10 @@ def import_network(raw: Path, session: Session) -> NetworkVersion:
         facilities = read_facilities(raw, tmp, bounds)
         counts = {k: count_near(lines, facilities, k) for k in ("signal", "crosswalk", "streetlight")}
         cost_check = compare_cost_zip(raw, tmp, features, stop_norms)
+        districts = read_districts(raw, tmp)
+        service_area = districts[SERVICE_AREA_NAME]
+        parks = read_parks(tmp, service_area)
+        seoul_roads = read_seoul_roads(raw, tmp)
     area = restricted_area(segments)
     restricted = (
         np.zeros(len(lines), dtype=bool)
@@ -355,8 +436,24 @@ def import_network(raw: Path, session: Session) -> NetworkVersion:
         "facility_counts": dict(Counter(k for k, _, _ in facilities)),
         "slope_unit": "slope_mean은 도(°). 경사.tif를 DEM에서 다시 계산해 확인했고 앱에는 tan(°)×100 %로 보낸다.",
         "team_stop_norm_check": cost_check,
+        "service_area": f"{SERVICE_AREA_NAME} 행정경계 {service_area.area / 1e6:.2f}km²",
     }
+    # 검색 색인. 용산구 도로는 탐색망 위의 점을, 구 밖 도로·공원·자치구는 베타 범위 안내용 위치를 쓴다.
+    yongsan_roads = road_places(edge_rows)
+    known = {name for name, _ in yongsan_roads}
+    places = [(name, "도로", xy) for name, xy in yongsan_roads]
+    places += [(name, "도로", xy) for name, xy in seoul_roads if name not in known]
+    places += [(name, "공원", xy) for name, xy in parks]
+    places += [(name, "자치구", (g.representative_point().x, g.representative_point().y)) for name, g in sorted(districts.items())]
+    place_lonlat = to_lonlat([xy for _, _, xy in places])
+    district_names = list(districts)
+    district_tree = shapely.STRtree(list(districts.values()))
+    place_points = shapely.points([xy for _, _, xy in places])
+    nearest = district_tree.query_nearest(place_points, max_distance=500, all_matches=False)
+    place_district = dict(zip(nearest[0].tolist(), nearest[1].tolist()))
 
+    session.execute(delete(Place))
+    session.execute(delete(ServiceArea))
     session.execute(delete(Facility))
     session.execute(delete(RoadEdge))
     session.execute(delete(RoadNode))
@@ -385,6 +482,21 @@ def import_network(raw: Path, session: Session) -> NetworkVersion:
     session.execute(
         insert(Facility),
         [dict(version=version, kind=k, source_id=s, wkb=shapely.to_wkb(g)) for k, s, g in facilities],
+    )
+    session.add(ServiceArea(version=version, name=f"서울 {SERVICE_AREA_NAME}", wkb=shapely.to_wkb(service_area)))
+    session.execute(
+        insert(Place),
+        [
+            dict(
+                version=version,
+                name=name,
+                category=category,
+                address="서울 " + district_names[place_district[i]] if i in place_district else "서울 밖",
+                lon=lonlat[0],
+                lat=lonlat[1],
+            )
+            for i, ((name, category, _), lonlat) in enumerate(zip(places, place_lonlat))
+        ],
     )
     session.execute(update(NetworkVersion).where(NetworkVersion.version != version).values(is_active=False))
     session.commit()
@@ -426,6 +538,8 @@ def main() -> None:
     parser.add_argument("--database-url", default=None)
     args = parser.parse_args()
     engine = make_engine(args.database_url)
+    # 도로망 파생 테이블은 스키마째 다시 만든다. 저장한 코스·추천 기록은 유지한다.
+    Base.metadata.drop_all(engine, tables=[m.__table__ for m in NETWORK_TABLES])
     init_db(engine)
     with session_factory(engine)() as session:
         network = import_network(args.raw, session)

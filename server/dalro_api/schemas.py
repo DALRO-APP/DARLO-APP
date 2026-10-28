@@ -10,6 +10,7 @@ Lon = Annotated[float, Field(ge=-180, le=180)]
 Lat = Annotated[float, Field(ge=-90, le=90)]
 Position = tuple[Lon, Lat]
 Purpose = Literal["PACE", "POWER", "NIGHT", "GREEN"]
+Label = Annotated[str, Field(min_length=1, max_length=40)]
 
 
 class _RequestBase(BaseModel):
@@ -18,6 +19,8 @@ class _RequestBase(BaseModel):
     purpose: Purpose
     time_of_day: Literal["day", "night"]
     distance_tolerance_ratio: float = Field(ge=0, le=0.3)
+    # 검색으로 고른 장소 이름. 코스의 start_label/end_label로 그대로 쓴다.
+    start_label: Label | None = None
 
 
 class LoopRequest(_RequestBase):
@@ -28,6 +31,7 @@ class LoopRequest(_RequestBase):
 class StraightRequest(_RequestBase):
     route_type: Literal["straight"]
     end: Position
+    end_label: Label | None = None
     target_distance_m: None
 
     @model_validator(mode="after")
@@ -88,6 +92,25 @@ class Course(BaseModel):
     data_version: str
     algorithm_version: str
     is_mock: bool
+
+
+class PlaceResult(BaseModel):
+    id: str
+    name: str
+    address: str
+    category: str
+    position: Position
+    # 실제 출발·도착에 쓰는 도로 위 지점. 범위 밖이거나 300m 안에 도로가 없으면 null
+    start_position: Position | None
+    in_service_area: bool
+    source: Literal["kakao", "local"]
+
+
+class PlaceSearchResponse(BaseModel):
+    query: str
+    service_area: str
+    places: list[PlaceResult]
+    notice: str | None
 
 
 class RecommendationResponse(BaseModel):

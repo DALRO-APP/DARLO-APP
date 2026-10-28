@@ -15,8 +15,8 @@ from sqlalchemy.orm import Session
 
 from . import pace
 from .config import FACILITY_BUFFER_M, PACE_EXCLUDED_FCLASS, SNAP_RADIUS_M
-from .geo import Position, slope_pct, to_xy
-from .models import Facility, NetworkVersion, RoadEdge
+from .geo import Position, slope_pct, to_lonlat, to_xy
+from .models import Facility, NetworkVersion, Place, RoadEdge, ServiceArea
 
 
 @dataclass
@@ -58,6 +58,9 @@ class RoadGraph:
     component: list[int]
     facilities: dict[str, shapely.STRtree]
     stats: dict = field(default_factory=dict)
+    service_area: shapely.Geometry | None = None
+    service_area_name: str = "서울 용산구"
+    places: list[tuple[str, str, str, Position]] = field(default_factory=list)  # 이름·분류·주소·위치
     _vertex_xy: np.ndarray | None = None
     _vertex_ref: list[tuple[int, int]] = field(default_factory=list)
 
@@ -113,13 +116,15 @@ class RoadGraph:
             component=[],
             facilities=facilities,
         )
-        graph._build()
-        return graph
-
-    @classmethod
-    def from_edges(cls, version: str, edges: list[Edge], nodes_xy, nodes_lonlat, facilities=None):
-        """테스트용 생성자."""
-        graph = cls(version, [], nodes_xy, nodes_lonlat, edges, [], [], facilities or {})
+        area = session.scalar(select(ServiceArea).where(ServiceArea.version == network.version))
+        if area is not None:
+            graph.service_area = shapely.from_wkb(area.wkb)
+            graph.service_area_name = area.name
+            shapely.prepare(graph.service_area)
+        graph.places = [
+            (p.name, p.category, p.address, (p.lon, p.lat))
+            for p in session.scalars(select(Place).where(Place.version == network.version))
+        ]
         graph._build()
         return graph
 
@@ -180,6 +185,25 @@ class RoadGraph:
             ),
             "stops_per_km": stops / (length / 1000),
         }
+
+    def in_service_area(self, lonlat: Position, margin_m: float = 0.0) -> bool:
+        """베타 서비스 범위(용산구) 안인지. 경계가 없으면 도로망 스냅 가능 여부로 본다."""
+        point = shapely.Point(to_xy([lonlat])[0])
+        if self.service_area is None:
+            return self.nearest_road_point(lonlat, SNAP_RADIUS_M) is not None
+        return self.service_area.distance(point) <= margin_m
+
+    def nearest_road_point(self, lonlat: Position, max_m: float) -> tuple[Position, float] | None:
+        """주 연결 성분 도로 위에서 가장 가까운 점과 거리."""
+        if not self._line_ref:
+            return None
+        point = shapely.Point(to_xy([lonlat])[0])
+        hits, distances = self._lines.query_nearest(point, max_distance=max_m, return_distance=True)
+        if not len(hits):
+            return None
+        line = shapely.LineString(self.edges[self._line_ref[int(hits[0])]].xy)
+        nearest = line.interpolate(line.project(point))
+        return to_lonlat([(nearest.x, nearest.y)])[0], float(distances[0])
 
     # ---- 스냅 ----
     def snap(self, lonlat: Position, overlay: "Overlay") -> Snap | None:

@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from dalro_api.db import init_db, make_engine, session_factory
 from dalro_api.geo import to_lonlat, to_xy
 from dalro_api.main import create_app
-from dalro_api.models import Facility, NetworkVersion, RoadEdge, RoadNode
+from dalro_api.models import Facility, NetworkVersion, Place, RoadEdge, RoadNode, ServiceArea
 
 ORIGIN = (126.9745, 37.5178)  # 이촌 한강공원 시연 출발지
 SIZE = 15
@@ -33,6 +33,12 @@ def grid_rows(version: str):
                 busy = dj == 0 and j == BUSY_ROW
                 edges.append((f"{i}_{j}_{'h' if dj == 0 else 'v'}", a, b, pa, pb, busy))
     return nodes, edges
+
+
+@pytest.fixture(autouse=True)
+def no_kakao_key(monkeypatch):
+    # server/.env.local에 키가 있어도 테스트는 실제 카카오를 부르지 않는다.
+    monkeypatch.delenv("KAKAO_REST_API_KEY", raising=False)
 
 
 @pytest.fixture
@@ -92,6 +98,14 @@ def database_url(tmp_path):
             if busy:
                 mid = ((pa[0] + pb[0]) / 2, (pa[1] + pb[1]) / 2)
                 session.add(Facility(version=version, kind="signal", source_id=edge_id, wkb=shapely.to_wkb(shapely.Point(mid))))
+        # 격자 범위를 베타 서비스 범위로 둔다.
+        xs, ys = zip(*nodes.values())
+        area = shapely.box(min(xs), min(ys), max(xs), max(ys))
+        session.add(ServiceArea(version=version, name="서울 용산구", wkb=shapely.to_wkb(area)))
+        for name, category, (i, j) in (("큰길", "도로", (3, BUSY_ROW)), ("격자공원", "공원", (10, 10))):
+            lon, lat = to_lonlat([nodes[f"n{i}_{j}"]])[0]
+            session.add(Place(version=version, name=name, category=category, address="서울 용산구", lon=lon, lat=lat))
+        session.add(Place(version=version, name="격자 밖 공원", category="공원", address="서울 강남구", lon=127.0276, lat=37.4979))
         session.commit()
     engine.dispose()
     return url

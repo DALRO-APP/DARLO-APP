@@ -5,8 +5,26 @@ SERVER_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB = SERVER_DIR / "data" / "dalro.sqlite3"
 
 
+def _load_env_file(path: Path) -> None:
+    """server/.env.local의 KEY=VALUE를 읽는다. 이미 설정된 환경 변수가 우선한다."""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_env_file(SERVER_DIR / ".env.local")
+
+
 def database_url() -> str:
     return os.environ.get("DALRO_DATABASE_URL", f"sqlite:///{DEFAULT_DB}")
+
+
+def kakao_rest_api_key() -> str | None:
+    # 서버 전용 비밀값. 앱 번들(EXPO_PUBLIC_*)에 넣지 않는다.
+    return os.environ.get("KAKAO_REST_API_KEY") or None
 
 
 def cors_origins() -> list[str]:
