@@ -29,6 +29,7 @@ import { colors } from "../theme/tokens";
 import type { RouteMapProps } from "./RouteMapOffline";
 import { Icon, T } from "./ui";
 import { RouteLineGroup } from "./RouteLineGroup";
+import { MapGestureSurface } from "./MapGestureSurface";
 
 const slopeColors = ["#637B6C", "#B4A474", "#CE9069", "#4C5854"];
 const labels: { name: string; position: Position }[] = [
@@ -109,6 +110,10 @@ export function TerrainRouteMap({
   );
   const zoom = (factor: number) =>
     setManualCamera({ key: cameraKey, camera: zoomTerrain(camera, factor) });
+  const changeCamera = useCallback(
+    (next: Camera) => setManualCamera({ key: cameraKey, camera: next }),
+    [cameraKey],
+  );
   const toggle = (layer: keyof typeof layers) =>
     setLayers((s) => ({ ...s, [layer]: !s[layer] }));
   const trail =
@@ -179,7 +184,11 @@ export function TerrainRouteMap({
           backgroundColor: "#101918",
         }}
       >
-        <View style={StyleSheet.absoluteFill} {...pan.panHandlers}>
+        <MapGestureSurface
+          camera={camera}
+          onChange={changeCamera}
+          panHandlers={pan.panHandlers}
+        >
           <Svg
             width="100%"
             height="100%"
@@ -352,7 +361,7 @@ export function TerrainRouteMap({
               </>
             )}
           </Svg>
-        </View>
+        </MapGestureSurface>
         <View pointerEvents="none" style={styles.brand}>
           <View style={styles.brandLine}>
             <View style={styles.dot} />

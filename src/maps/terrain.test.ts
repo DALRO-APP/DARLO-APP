@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { fitTerrain, terrain, terrainPoint, zoomTerrain } from "./terrain";
+import {
+  fitTerrain,
+  terrain,
+  terrainPoint,
+  transformTerrain,
+  zoomTerrain,
+} from "./terrain";
 import type { Position } from "../domain/contracts";
 
 describe("공간정보 지도 좌표와 카메라", () => {
@@ -38,6 +44,20 @@ describe("공간정보 지도 좌표와 카메라", () => {
       );
       expect(zoomTerrain(frame, 100).width).toBe(24000);
     }
+  });
+  it("핀치 확대는 손가락 중심의 지도 좌표를 고정하고 함께 이동한다", () => {
+    const frame = fitTerrain([[126.9745, 37.5178]], 0.8);
+    const at = (camera: typeof frame, [u, v]: Position) => [
+      camera.x + u * camera.width,
+      camera.y + v * camera.height,
+    ];
+    const zoomed = transformTerrain(frame, 0.5, [0.3, 0.7]);
+    expect(zoomed.width).toBeCloseTo(frame.width / 2);
+    expect(at(zoomed, [0.3, 0.7])[0]).toBeCloseTo(at(frame, [0.3, 0.7])[0]!);
+    expect(at(zoomed, [0.3, 0.7])[1]).toBeCloseTo(at(frame, [0.3, 0.7])[1]!);
+    const moved = transformTerrain(frame, 1, [0.3, 0.7], [0.5, 0.5]);
+    expect(at(moved, [0.5, 0.5])[0]).toBeCloseTo(at(frame, [0.3, 0.7])[0]!);
+    expect(at(moved, [0.5, 0.5])[1]).toBeCloseTo(at(frame, [0.3, 0.7])[1]!);
   });
   it("번들 자료에 도로망 버전·원본 해시·DEM 좌표계와 실제 벡터가 있다", () => {
     expect(terrain.network_version).toMatch(/^yongsan-verified-[a-f0-9]{8}$/);

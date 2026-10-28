@@ -81,3 +81,51 @@ test("공간정보 지도에서 레이어·확대·코스 선택·상세 진입"
   ).toHaveCount(1);
   expect(errors).toEqual([]);
 });
+
+test("모바일 웹은 페이지 확대를 막고 지도만 두 손가락으로 확대한다", async ({
+  page,
+  context,
+}, info) => {
+  test.skip(info.project.name !== "mobile", "터치 기기 전용");
+  await page.goto("/");
+  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
+    "content",
+    /user-scalable=no/,
+  );
+  await page
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
+  const map = page.getByTestId("terrain-map");
+  const svg = map.getByLabel("용산구 공간정보 코스 지도");
+  await expect(svg).toBeVisible();
+  const before = await svg.getAttribute("viewBox");
+  const box = (await page.getByTestId("map-gesture-surface").boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const cdp = await context.newCDPSession(page);
+  const touch = (type: "touchStart" | "touchMove" | "touchEnd", gap: number) =>
+    cdp.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints:
+        type === "touchEnd"
+          ? []
+          : [
+              { x: cx - gap, y: cy, id: 1 },
+              { x: cx + gap, y: cy, id: 2 },
+            ],
+    });
+  await touch("touchStart", 30);
+  for (const gap of [45, 60, 75, 90]) await touch("touchMove", gap);
+  await touch("touchEnd", 0);
+  await expect(svg).not.toHaveAttribute("viewBox", before!);
+  const zoomed = Number((await svg.getAttribute("viewBox"))!.split(" ")[2]);
+  expect(zoomed).toBeLessThan(Number(before!.split(" ")[2]));
+  expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);
+  expect(await page.evaluate(() => document.scrollingElement!.scrollTop)).toBe(
+    0,
+  );
+});

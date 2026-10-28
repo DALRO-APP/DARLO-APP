@@ -145,6 +145,7 @@ export function Screen({
 }) {
   return (
     <ScrollView
+      testID="screen-scroll"
       style={{ flex: 1, backgroundColor: colors.background }}
       contentContainerStyle={[
         styles.screen,

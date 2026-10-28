@@ -41,6 +41,12 @@ vercel deploy --prod --yes
 
 `scripts/build-vercel.mjs`는 웹을 `hybrid`, API 주소 `/api`, PACE 서버 추천, 공간정보 지도 모드로 빌드한다. 공개 환경 변수 변경이 Metro 캐시에 남지 않게 `--clear`를 사용한다. 카카오 REST 키가 없으면 기존 로컬 장소 색인을 사용한다. 서버 키를 `EXPO_PUBLIC_*`에 넣지 않는다.
 
+## 휴대폰 브라우저 시연
+
+웹에서만 `WebViewport`가 viewport를 `user-scalable=no`로 고정하고 `body`를 화면에 붙인다. 페이지 전체 핀치·더블탭 확대와 바깥 바운스 스크롤을 막고, 세로 이동은 각 화면의 `ScrollView`에서만 일어난다. iOS Safari는 viewport 설정을 무시할 수 있어 `gesturestart`와 두 손가락 `touchmove`도 막는다.
+
+공간정보 지도 위에서는 `MapGestureSurface.web`이 Pointer Events로 한 손가락 이동, 두 손가락 확대·축소, 데스크톱 휠 확대를 처리한다. 손가락 중심의 지도 좌표를 고정하는 계산은 `transformTerrain`이다. native는 기존 PanResponder 이동과 확대 버튼을 유지한다. 카카오 지도 모드는 SDK 제스처를 그대로 쓴다.
+
 ## 확인 기준
 
 서버 테스트는 고정 자료 복원, 원본 보존, 생성 데이터 제외, 인스턴스 교체 후 공간자료 유지·생성 코스 소실, API rewrite와 검색 query를 검사한다. 앱 테스트는 서버 인스턴스가 바뀐 뒤의 코스 복원, API 주소별 캐시 분리, 손상 캐시 배제, 24개 제한과 저장 실패를 검사한다.
@@ -56,3 +62,4 @@ vercel deploy --prod --yes
 - Preview `/api/health`: `temporary-demo`, 도로 9,276개·노드 6,906개·실제 자료 버전 정상.
 - 보호된 Preview의 Chrome 모바일·데스크톱에서 Straight 6.7km, Loop 5,112/4,699/4,658m, 신호등 묶음 3/2/0곳, 코스 선택·상세·새로고침·모의 러닝을 확인했다. 상세/새로고침이 서버 코스 저장 조회 없이 기기 캐시로 이어졌다. responder 경고 및 페이지 오류 0건.
 - Vercel의 Preview 보호 설정은 해제하지 않았다. CLI의 인증 기능을 사용해 검증했다. 실제 기기 검증은 수행하지 않았다.
+- 모바일 웹 고정: Chrome 모바일 에뮬레이션에서 지도 두 손가락 확대 시 지도 viewBox만 바뀌고 페이지 배율 1·문서 스크롤 0을 유지함을 E2E로 확인했다. 실제 iPhone Safari·Android Chrome 확인은 아래 운영 배포 후 사용자 기기에서 필요하다.

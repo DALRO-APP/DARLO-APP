@@ -45,3 +45,18 @@ export function zoomTerrain(camera: Camera, factor: number): Camera {
     height,
   };
 }
+
+// 손가락 중심의 지도 좌표를 고정한 채 핀치 확대와 이동을 함께 반영한다.
+export function transformTerrain(
+  camera: Camera,
+  factor: number,
+  anchor: Position,
+  nextAnchor: Position = anchor,
+): Camera {
+  const frame = zoomTerrain(camera, factor);
+  return {
+    ...frame,
+    x: camera.x + anchor[0] * camera.width - nextAnchor[0] * frame.width,
+    y: camera.y + anchor[1] * camera.height - nextAnchor[1] * frame.height,
+  };
+}

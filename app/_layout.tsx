@@ -5,9 +5,11 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { queryClient } from "../src/services/queries";
 import { colors } from "../src/theme/tokens";
 import { Status } from "../src/components/ui";
+import { WebViewport } from "../src/components/WebViewport";
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
+      <WebViewport />
       <QueryClientProvider client={queryClient}>
         <StatusBar style="light" />
         <SafeAreaView
