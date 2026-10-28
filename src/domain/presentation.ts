@@ -1,4 +1,34 @@
-import type { Course } from "./contracts";
+import {
+  haversine,
+  type Course,
+  type RecommendationRequest,
+} from "./contracts";
+import { STARTS } from "./catalog";
+
+// 조건에 저장한 장소 이름. 이전 버전 저장값처럼 이름이 없으면 시연 장소 좌표로 찾는다.
+export function placeLabel(
+  request: RecommendationRequest,
+  field: "start" | "end",
+): string {
+  const label =
+    field === "start"
+      ? request.start_label
+      : request.route_type === "straight"
+        ? request.end_label
+        : undefined;
+  const position =
+    field === "start"
+      ? request.start
+      : request.route_type === "straight"
+        ? request.end
+        : null;
+  return (
+    label ??
+    (position &&
+      STARTS.find((s) => haversine(s.coordinate, position) < 1)?.label) ??
+    (field === "start" ? "선택한 출발지" : "선택한 목적지")
+  );
+}
 
 // 코스 환경 설명이며 주행 분석 또는 안전 판정이 아닙니다.
 export function courseExplanation(course: Course): string {

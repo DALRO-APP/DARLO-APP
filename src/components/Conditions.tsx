@@ -1,22 +1,53 @@
-import { useState } from "react";
-import { Modal, Pressable, TextInput, View } from "react-native";
-import { Button, Chip, Icon, Panel, T } from "./ui";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+} from "react-native";
+import { notify } from "./notify";
+import { Button, Chip, Icon, Panel, Status, T } from "./ui";
 import { STARTS } from "../domain/catalog";
-import { parseDistanceKm } from "../domain/presentation";
+import { parseDistanceKm, placeLabel } from "../domain/presentation";
+import { usePlaceSearch } from "../services/queries";
 import { usePreferences } from "../state/preferences";
 import { colors } from "../theme/tokens";
 import { haversine, type Position } from "../domain/contracts";
 
 const distances = [3000, 5000, 7000, 10000];
-const placeName = (coordinate: Position) =>
-  STARTS.find(
-    (s) =>
-      s.coordinate[0] === coordinate[0] && s.coordinate[1] === coordinate[1],
-  )?.label ?? "선택한 장소";
+// 저장·코스 ID가 같은 좌표를 다시 만들 수 있도록 소수 6자리(약 0.1m)로 맞춘다.
+const round = (p: Position): Position => [
+  Math.round(p[0] * 1e6) / 1e6,
+  Math.round(p[1] * 1e6) / 1e6,
+];
+interface Option {
+  key: string;
+  name: string;
+  detail: string;
+  position: Position;
+  start_position: Position | null;
+  in_service_area: boolean;
+  serviceArea?: string;
+}
 export function Conditions({ onRecommend }: { onRecommend: () => void }) {
   const request = usePreferences((s) => s.request);
   const update = usePreferences((s) => s.update);
   const [selecting, setSelecting] = useState<"start" | "end" | null>(null);
+  const [query, setQuery] = useState("");
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+  const searching = debounced.trim().length > 0;
+  const search = usePlaceSearch(debounced);
+  const close = () => {
+    setSelecting(null);
+    setQuery("");
+    setDebounced("");
+  };
   const initialDistance = request.target_distance_m ?? 5000;
   const [custom, setCustom] = useState(!distances.includes(initialDistance));
   const [input, setInput] = useState(String(initialDistance / 1000));
@@ -28,7 +59,68 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
       : request.route_type === "straight"
         ? request.end
         : undefined;
-  const location = (field: "start" | "end", coordinate: Position) => (
+  const current =
+    selecting === "end" && request.route_type === "straight"
+      ? request.end
+      : request.start;
+  const choose = (place: Option) => {
+    const area = place.serviceArea ?? "서울 용산구";
+    if (!place.in_service_area)
+      return notify(
+        "베타 서비스 지역이 아니에요",
+        `DALRO 베타 버전은 ${area} 안에서만 코스를 추천해요. ${area} 안의 장소를 검색해 주세요.`,
+      );
+    if (!place.start_position)
+      return notify(
+        "출발할 도로를 찾지 못했어요",
+        "이 장소 근처 300m 안에 달릴 수 있는 도로가 없어요. 가까운 다른 장소를 골라 주세요.",
+      );
+    const position = round(place.start_position);
+    update(
+      selecting === "end"
+        ? { end: position, end_label: place.name }
+        : { start: position, start_label: place.name },
+    );
+    close();
+  };
+  const option = (place: Option) => {
+    const disabled =
+      request.route_type === "straight" &&
+      !!other &&
+      !!place.start_position &&
+      haversine(place.start_position, other) < 50;
+    return (
+      <Pressable
+        key={place.key}
+        accessibilityRole="button"
+        accessibilityLabel={place.name}
+        disabled={disabled}
+        onPress={() => choose(place)}
+        style={{
+          padding: 16,
+          borderWidth: 1,
+          borderColor:
+            place.start_position && haversine(current, place.start_position) < 1
+              ? colors.lime
+              : colors.line,
+          borderRadius: 14,
+          gap: 6,
+          opacity: disabled ? 0.35 : place.in_service_area ? 1 : 0.6,
+        }}
+      >
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+          <T style={{ flex: 1, fontWeight: "700" }}>{place.name}</T>
+          {!place.in_service_area && (
+            <T style={{ fontSize: 11, color: colors.muted }}>베타 지역 밖</T>
+          )}
+        </View>
+        <T muted style={{ fontSize: 12 }}>
+          {disabled ? "이미 반대쪽 장소로 선택했어요" : place.detail}
+        </T>
+      </Pressable>
+    );
+  };
+  const location = (field: "start" | "end") => (
     <View style={{ gap: 10 }}>
       <T style={{ fontSize: 14, fontWeight: "700" }}>
         {field === "start" ? "출발지" : "목적지"}
@@ -52,21 +144,28 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
           name={field === "start" ? "location-outline" : "flag-outline"}
           color={colors.lime}
         />
-        <T style={{ flex: 1, fontSize: 14 }}>{placeName(coordinate)}</T>
+        <T style={{ flex: 1, fontSize: 14 }}>{placeLabel(request, field)}</T>
         <Icon name="chevron-down" size={18} />
       </Pressable>
     </View>
   );
   return (
     <View style={{ gap: 22 }}>
-      {location("start", request.start)}
+      {location("start")}
       {request.route_type === "straight" ? (
         <>
-          {location("end", request.end)}
+          {location("end")}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="출발지와 목적지 바꾸기"
-            onPress={() => update({ start: request.end, end: request.start })}
+            onPress={() =>
+              update({
+                start: request.end,
+                end: request.start,
+                start_label: request.end_label,
+                end_label: request.start_label,
+              })
+            }
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -203,7 +302,8 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
         </View>
       </View>
       <T muted style={{ fontSize: 11, lineHeight: 18 }}>
-        현재 위치·주소 검색 대신 용산구 시연 장소에서 선택해요.
+        장소를 검색해 고를 수 있어요 · 베타 버전은 서울 용산구 안에서만
+        추천해요.
       </T>
       <Button
         label="코스 추천받기"
@@ -222,7 +322,7 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
         visible={selecting !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setSelecting(null)}
+        onRequestClose={close}
       >
         <View
           style={{
@@ -233,65 +333,93 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
             padding: 22,
           }}
         >
-          <Panel style={{ width: "100%", maxWidth: 460, padding: 24, gap: 18 }}>
+          <Panel style={{ width: "100%", maxWidth: 460, padding: 24, gap: 14 }}>
             <T style={{ fontSize: 22, fontWeight: "700" }}>
               {selecting === "end"
                 ? "어디까지 달릴까요?"
                 : "어디서 출발할까요?"}
             </T>
-            {request.route_type === "straight" && (
-              <T muted style={{ fontSize: 12 }}>
-                출발지와 목적지는 다른 장소를 선택해 주세요.
-              </T>
-            )}
-            {STARTS.map((place) => {
-              const disabled =
-                request.route_type === "straight" &&
-                !!other &&
-                haversine(place.coordinate, other) < 50;
-              const current =
-                selecting === "end" && request.route_type === "straight"
-                  ? request.end
-                  : request.start;
-              return (
-                <Pressable
-                  key={place.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={place.label}
-                  disabled={disabled}
-                  onPress={() => {
-                    update(
-                      selecting === "end"
-                        ? { end: place.coordinate }
-                        : { start: place.coordinate },
-                    );
-                    setSelecting(null);
-                  }}
-                  style={{
-                    padding: 16,
-                    borderWidth: 1,
-                    borderColor:
-                      haversine(current, place.coordinate) < 1
-                        ? colors.lime
-                        : colors.line,
-                    borderRadius: 14,
-                    gap: 6,
-                    opacity: disabled ? 0.35 : 1,
-                  }}
-                >
-                  <T style={{ fontWeight: "700" }}>{place.label}</T>
-                  <T muted style={{ fontSize: 12 }}>
-                    {disabled ? "이미 반대쪽 장소로 선택했어요" : place.detail}
-                  </T>
-                </Pressable>
-              );
-            })}
-            <Button
-              label="닫기"
-              secondary
-              icon="close"
-              onPress={() => setSelecting(null)}
+            <TextInput
+              accessibilityLabel="장소 검색"
+              placeholder="장소·역·도로명 검색"
+              placeholderTextColor={colors.faint}
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              returnKeyType="search"
+              style={{
+                minHeight: 48,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: colors.line,
+                paddingHorizontal: 14,
+                color: colors.text,
+                fontSize: 16,
+                backgroundColor: colors.elevated,
+              }}
             />
+            <T muted style={{ fontSize: 12, lineHeight: 18 }}>
+              베타 버전은 서울 용산구 안에서만 코스를 추천해요.
+              {request.route_type === "straight"
+                ? " 출발지와 목적지는 다른 장소를 선택해 주세요."
+                : ""}
+            </T>
+            <ScrollView
+              style={{ maxHeight: 340 }}
+              contentContainerStyle={{ gap: 10 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {!searching ? (
+                <>
+                  <T muted style={{ fontSize: 12 }}>
+                    시연 장소
+                  </T>
+                  {STARTS.map((place) =>
+                    option({
+                      key: place.id,
+                      name: place.label,
+                      detail: place.detail,
+                      position: place.coordinate,
+                      start_position: place.coordinate,
+                      in_service_area: true,
+                    }),
+                  )}
+                </>
+              ) : search.isPending ? (
+                <ActivityIndicator color={colors.lime} />
+              ) : search.isError ? (
+                <Status
+                  title="장소를 검색하지 못했어요"
+                  message={search.error.message}
+                  onRetry={() => void search.refetch()}
+                />
+              ) : (
+                <>
+                  {search.data.places.length === 0 && (
+                    <T muted style={{ fontSize: 13 }}>
+                      검색 결과가 없어요. 다른 이름으로 찾아 주세요.
+                    </T>
+                  )}
+                  {search.data.places.map((place) =>
+                    option({
+                      key: place.id,
+                      name: place.name,
+                      detail: place.address,
+                      position: place.position,
+                      start_position: place.start_position,
+                      in_service_area: place.in_service_area,
+                      serviceArea: search.data.service_area,
+                    }),
+                  )}
+                  {search.data.notice && (
+                    <T muted style={{ fontSize: 11, lineHeight: 17 }}>
+                      {search.data.notice}
+                    </T>
+                  )}
+                </>
+              )}
+            </ScrollView>
+            <Button label="닫기" secondary icon="close" onPress={close} />
           </Panel>
         </View>
       </Modal>

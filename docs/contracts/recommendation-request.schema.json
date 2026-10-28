@@ -39,6 +39,11 @@
           "minimum": 0,
           "maximum": 0.3
         },
+        "start_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
         "route_type": {
           "type": "string",
           "const": "loop"
@@ -98,6 +103,11 @@
           "minimum": 0,
           "maximum": 0.3
         },
+        "start_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
         "route_type": {
           "type": "string",
           "const": "straight"
@@ -119,6 +129,11 @@
           "items": false,
           "minItems": 2,
           "maxItems": 2
+        },
+        "end_label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
         },
         "target_distance_m": {
           "type": "null"

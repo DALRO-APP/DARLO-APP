@@ -371,3 +371,49 @@ test("Straight 방식 → 출발·목적지 선택과 교환 → 추천 → 완�
   await expect(page).toHaveURL(/straight-pace-namsan-ichon-day-1/);
   expect(errors).toEqual([]);
 });
+
+test("장소 검색 → 베타 지역 밖 안내 → 용산구 장소로 추천 → 새로고침 복원", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  const dialogs: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("dialog", async (dialog) => {
+    dialogs.push(dialog.message());
+    await dialog.accept();
+  });
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
+  await page.getByRole("button", { name: "출발지 선택", exact: true }).click();
+  await page.getByLabel("장소 검색").fill("강남");
+  await expect(page.getByText("베타 지역 밖", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "강남역", exact: true }).click();
+  await expect.poll(() => dialogs.length).toBe(1);
+  expect(dialogs[0]).toContain("베타 버전은 서울 용산구 안에서만");
+  await page.getByLabel("장소 검색").fill("삼각지");
+  await page.getByRole("button", { name: "삼각지역", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "출발지 선택", exact: true }),
+  ).toContainText("삼각지역");
+  await page.screenshot({
+    path: `test-results/${test.info().project.name}-place-search.png`,
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "코스 추천받기", exact: true })
+    .click();
+  await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "이 코스로 달리기", exact: true })
+    .click();
+  await expect(page).toHaveURL(/c126973032_37534738/);
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "러닝 시작", exact: true }),
+  ).toBeVisible();
+  expect(dialogs).toHaveLength(1);
+  expect(errors).toEqual([]);
+});

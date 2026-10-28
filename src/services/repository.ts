@@ -1,14 +1,17 @@
 import {
   courseSchema,
+  placeSearchResponseSchema,
   recommendationRequestSchema,
   recommendationResponseSchema,
   parseRecommendations,
   type RecommendationRequest,
   type RecommendationResponse,
   type Course,
+  type PlaceSearchResponse,
   type Purpose,
 } from "../domain/contracts";
-import { makeMockCourse } from "../data/mock";
+import { MOCK_PLACE_ID, makeMockCourse, parsePlaceId } from "../data/mock";
+import { searchDemoPlaces } from "../data/places";
 
 export interface CourseRepository {
   recommend(
@@ -16,6 +19,10 @@ export interface CourseRepository {
     signal?: AbortSignal,
   ): Promise<RecommendationResponse>;
   getCourse(id: string, signal?: AbortSignal): Promise<Course>;
+  searchPlaces(
+    query: string,
+    signal?: AbortSignal,
+  ): Promise<PlaceSearchResponse>;
 }
 export class MockCourseRepository implements CourseRepository {
   private courses = new Map<string, Course>();
@@ -49,16 +56,14 @@ export class MockCourseRepository implements CourseRepository {
   async getCourse(id: string): Promise<Course> {
     const existing = this.courses.get(id);
     if (existing) return existing;
-    const straight =
-      /^straight-(pace|power|night|green)-(ichon|namsan|yongsan)-(ichon|namsan|yongsan)-(day|night)-([0-2])$/.exec(
-        id,
-      );
+    const straight = new RegExp(
+      `^straight-(pace|power|night|green)-(${MOCK_PLACE_ID})-(${MOCK_PLACE_ID})-(day|night)-([0-2])$`,
+    ).exec(id);
     if (straight) {
-      const { STARTS } = await import("../domain/catalog");
       const request = recommendationRequestSchema.parse({
         schema_version: "1.0",
-        start: STARTS.find((s) => s.id === straight[2])!.coordinate,
-        end: STARTS.find((s) => s.id === straight[3])!.coordinate,
+        start: parsePlaceId(straight[2]!),
+        end: parsePlaceId(straight[3]!),
         purpose: straight[1]!.toUpperCase(),
         route_type: "straight",
         target_distance_m: null,
@@ -68,17 +73,15 @@ export class MockCourseRepository implements CourseRepository {
       return makeMockCourse(request, request.purpose, Number(straight[5]));
     }
     // URL 직접 진입/새로고침에서도 동일한 데모 코스를 복원합니다.
-    const match =
-      /^(pace|power|night|green)-(ichon|namsan|yongsan)-(\d{4,5})-(day|night)-([0-2])$/.exec(
-        id,
-      );
+    // 검색한 장소는 좌표로 복원하며 이름은 '선택한 출발지'로 표시됩니다.
+    const match = new RegExp(
+      `^(pace|power|night|green)-(${MOCK_PLACE_ID})-(\\d{4,5})-(day|night)-([0-2])$`,
+    ).exec(id);
     if (!match)
       throw new Error("코스를 찾을 수 없습니다. 홈에서 다시 추천받아 주세요.");
-    const { STARTS } = await import("../domain/catalog");
-    const start = STARTS.find((s) => s.id === match[2])!;
     const request = recommendationRequestSchema.parse({
       schema_version: "1.0",
-      start: start.coordinate,
+      start: parsePlaceId(match[2]!),
       target_distance_m: Number(match[3]),
       purpose: match[1]!.toUpperCase() as Purpose,
       time_of_day: match[4] as "day" | "night",
@@ -90,6 +93,9 @@ export class MockCourseRepository implements CourseRepository {
       match[1]!.toUpperCase() as Purpose,
       Number(match[5]),
     );
+  }
+  async searchPlaces(query: string) {
+    return searchDemoPlaces(query);
   }
 }
 
@@ -113,12 +119,23 @@ export class HttpCourseRepository implements CourseRepository {
           signal: controller.signal,
         },
       );
-      if (!response.ok)
+      if (!response.ok) {
+        // 서버가 사용자용 문장(detail)을 주면 그대로 보여준다(예: 베타 범위 안내).
+        const detail = await response
+          .json()
+          .then((body: { detail?: unknown }) =>
+            typeof body?.detail === "string" ? body.detail : null,
+          )
+          .catch(() => null);
         throw new Error(
           response.status === 422
-            ? "이 조건으로 코스를 찾지 못했어요. 거리나 출발지를 바꿔 주세요."
-            : "코스를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+            ? (detail ??
+                "이 조건으로 코스를 찾지 못했어요. 거리나 출발지를 바꿔 주세요.")
+            : response.status === 501 && detail
+              ? detail
+              : "코스를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
         );
+      }
       return await response.json();
     } finally {
       clearTimeout(timer);
@@ -141,6 +158,14 @@ export class HttpCourseRepository implements CourseRepository {
       await this.request(`/v1/courses/${encodeURIComponent(id)}`, { signal }),
     );
   }
+  async searchPlaces(query: string, signal?: AbortSignal) {
+    return placeSearchResponseSchema.parse(
+      await this.request(
+        `/v1/places/search?query=${encodeURIComponent(query)}`,
+        { signal },
+      ),
+    );
+  }
 }
 // 서버가 구현한 목적만 HTTP로 보내고 나머지는 더미로 시연한다. 장애 시
 // 전환이 아니라 목적별 고정 경로이며, 코스의 is_mock으로 화면에 구분한다.
@@ -158,9 +183,13 @@ export class RoutedCourseRepository implements CourseRepository {
   getCourse(id: string, signal?: AbortSignal) {
     return (isMockCourseId(id) ? this.demo : this.server).getCourse(id, signal);
   }
+  // 장소 검색은 목적과 무관하게 서버(카카오·용산구 자료)를 쓴다.
+  searchPlaces(query: string, signal?: AbortSignal) {
+    return this.server.searchPlaces(query, signal);
+  }
 }
 export const isMockCourseId = (id: string) =>
-  /^(straight-)?(pace|power|night|green)-(ichon|namsan|yongsan|custom)-/.test(
+  new RegExp(`^(straight-)?(pace|power|night|green)-(${MOCK_PLACE_ID})-`).test(
     id,
   );
 const source = process.env.EXPO_PUBLIC_DATA_SOURCE ?? "mock";

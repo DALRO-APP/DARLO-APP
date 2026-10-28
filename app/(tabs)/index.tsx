@@ -9,7 +9,8 @@ import {
   T,
   useWide,
 } from "../../src/components/ui";
-import { PURPOSES, STARTS, formatDistance } from "../../src/domain/catalog";
+import { PURPOSES, formatDistance } from "../../src/domain/catalog";
+import { placeLabel } from "../../src/domain/presentation";
 import type { Purpose } from "../../src/domain/contracts";
 import { usePreferences } from "../../src/state/preferences";
 import { useRunning } from "../../src/state/running";
@@ -29,19 +30,6 @@ export default function Home() {
   const favorites = usePreferences((s) => s.favorites);
   const records = useRunning((s) => s.records);
   const recent = records[0];
-  const destination =
-    request.route_type === "straight"
-      ? STARTS.find(
-          (s) =>
-            s.coordinate[0] === request.end[0] &&
-            s.coordinate[1] === request.end[1],
-        )
-      : undefined;
-  const start = STARTS.find(
-    (s) =>
-      s.coordinate[0] === request.start[0] &&
-      s.coordinate[1] === request.start[1],
-  );
   const session = useRunning((s) => s.session);
   const draft = useRunning((s) => s.draft);
   return (
@@ -105,9 +93,9 @@ export default function Home() {
         <Icon name="location-outline" color={colors.lime} size={20} />
         <View style={{ flex: 1, gap: 4 }}>
           <T style={{ fontSize: 13, fontWeight: "600" }}>
-            {start?.label ?? "선택한 출발지"}
+            {placeLabel(request, "start")}
             {request.route_type === "straight"
-              ? ` → ${destination?.label ?? "선택한 목적지"}`
+              ? ` → ${placeLabel(request, "end")}`
               : ""}
           </T>
           <T muted style={{ fontSize: 11 }}>

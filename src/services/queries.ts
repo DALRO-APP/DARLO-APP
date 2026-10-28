@@ -14,6 +14,15 @@ export function useRecommendations() {
     enabled: hydrated,
   });
 }
+export function usePlaceSearch(query: string) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: ["places", trimmed],
+    queryFn: ({ signal }) => courseRepository.searchPlaces(trimmed, signal),
+    enabled: trimmed.length > 0,
+    staleTime: 5 * 60000,
+  });
+}
 export function useCourse(id: string) {
   return useQuery({
     queryKey: ["courses", id],

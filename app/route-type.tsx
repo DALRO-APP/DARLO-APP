@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, View } from "react-native";
 import { DemoNote, FlowHeader } from "../src/components/Flow";
 import { Icon, Screen, T } from "../src/components/ui";
 import { PURPOSES, STARTS } from "../src/domain/catalog";
+import { haversine } from "../src/domain/contracts";
 import { usePreferences } from "../src/state/preferences";
 import { useLocalDataReady } from "../src/state/hydration";
 import { colors } from "../src/theme/tokens";
@@ -23,19 +24,18 @@ export default function RouteType() {
         route_type: "loop",
         target_distance_m: request.target_distance_m ?? 5000,
       });
-    else
+    else if (request.route_type !== "straight") {
+      // 목적지 기본값은 출발지와 50m 이상 떨어진 첫 시연 장소다.
+      const end = STARTS.find(
+        (s) => haversine(s.coordinate, request.start) >= 50,
+      )!;
       update({
         route_type: "straight",
         target_distance_m: null,
-        end:
-          request.route_type === "straight"
-            ? request.end
-            : STARTS.find(
-                (s) =>
-                  s.coordinate[0] !== request.start[0] ||
-                  s.coordinate[1] !== request.start[1],
-              )!.coordinate,
+        end: end.coordinate,
+        end_label: end.label,
       });
+    }
     router.push("/explore");
   };
   return (

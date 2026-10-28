@@ -13,6 +13,8 @@ const requestBase = {
   purpose: purposeSchema,
   time_of_day: z.enum(["day", "night"]),
   distance_tolerance_ratio: z.number().min(0).max(0.3),
+  // 검색으로 고른 장소 이름. 서버가 코스의 start_label/end_label로 쓴다.
+  start_label: z.string().min(1).max(40).optional(),
 };
 export const recommendationRequestSchema = z.discriminatedUnion("route_type", [
   z.object({
@@ -25,6 +27,7 @@ export const recommendationRequestSchema = z.discriminatedUnion("route_type", [
       ...requestBase,
       route_type: z.literal("straight"),
       end: positionSchema,
+      end_label: z.string().min(1).max(40).optional(),
       target_distance_m: z.null(),
     })
     .refine((request) => haversine(request.start, request.end) >= 50, {
@@ -166,6 +169,26 @@ export function parseRecommendations(
   }
   return response;
 }
+
+export const placeSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  address: z.string(),
+  category: z.string(),
+  position: positionSchema,
+  // 실제 출발·도착에 쓰는 도로 위 지점. 서비스 범위 밖이거나 근처 도로가 없으면 null
+  start_position: positionSchema.nullable(),
+  in_service_area: z.boolean(),
+  source: z.enum(["kakao", "local"]),
+});
+export type Place = z.infer<typeof placeSchema>;
+export const placeSearchResponseSchema = z.object({
+  query: z.string(),
+  service_area: z.string(),
+  places: z.array(placeSchema),
+  notice: z.string().nullable(),
+});
+export type PlaceSearchResponse = z.infer<typeof placeSearchResponseSchema>;
 
 export const edgePropertiesSchema = z.object({
   edge_id: z.string().min(1),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseDistanceKm, courseExplanation } from "./presentation";
+import { parseDistanceKm, courseExplanation, placeLabel } from "./presentation";
 import { makeMockCourse } from "../data/mock";
 import { STARTS } from "./catalog";
 describe("직접 입력 거리", () => {
@@ -69,5 +69,37 @@ describe("직접 입력 거리", () => {
     expect(courseExplanation(course)).toBe(
       "신호 부착대·횡단보도 km당 9.1곳 (용산구 도로 평균 5.1곳)",
     );
+  });
+});
+
+describe("조건 장소 이름", () => {
+  const base = {
+    schema_version: "1.0" as const,
+    start: STARTS[1]!.coordinate,
+    purpose: "PACE" as const,
+    time_of_day: "day" as const,
+    distance_tolerance_ratio: 0.1,
+  };
+  it("검색한 이름을 쓰고 이전 저장값은 시연 장소 좌표로 찾는다", () => {
+    const loop = {
+      ...base,
+      route_type: "loop" as const,
+      target_distance_m: 5000,
+    };
+    expect(placeLabel(loop, "start")).toBe("남산 둘레길");
+    expect(placeLabel({ ...loop, start_label: "삼각지역" }, "start")).toBe(
+      "삼각지역",
+    );
+    expect(placeLabel({ ...loop, start: [126.97, 37.53] }, "start")).toBe(
+      "선택한 출발지",
+    );
+    const straight = {
+      ...base,
+      route_type: "straight" as const,
+      target_distance_m: null,
+      end: [126.9946, 37.5345] as [number, number],
+      end_label: "이태원역",
+    };
+    expect(placeLabel(straight, "end")).toBe("이태원역");
   });
 });

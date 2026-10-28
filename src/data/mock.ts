@@ -122,6 +122,29 @@ const shapes: Record<Purpose, Position[]> = {
   ],
 };
 
+// 더미 코스 ID의 장소 부분. 시연 장소는 이름, 검색한 장소는 좌표(마이크로도 정수)로 적어
+// 새로고침 후에도 같은 코스를 복원한다. URL 경로에 점이 있으면 정적 서버가 파일로 보므로
+// 소수점을 쓰지 않는다.
+export const MOCK_PLACE_ID = "ichon|namsan|yongsan|c\\d+_\\d+";
+export function placeId(position: Position): string {
+  const start = STARTS.find(
+    (s) => s.coordinate[0] === position[0] && s.coordinate[1] === position[1],
+  );
+  return (
+    start?.id ??
+    `c${Math.round(position[0] * 1e6)}_${Math.round(position[1] * 1e6)}`
+  );
+}
+export function parsePlaceId(id: string): Position {
+  const start = STARTS.find((s) => s.id === id);
+  if (start) return start.coordinate;
+  const [lon, lat] = id
+    .slice(1)
+    .split("_")
+    .map((value) => Number(value) / 1e6);
+  return [lon!, lat!];
+}
+
 // 데모 모양을 목표 거리로 확대/축소합니다. 실제 도로 탐색 알고리즘이 아닙니다.
 export function makeMockCourse(
   request: RecommendationRequest,
@@ -172,7 +195,7 @@ export function makeMockCourse(
       s.coordinate[0] === request.start[0] &&
       s.coordinate[1] === request.start[1],
   );
-  const startLabel = start?.label ?? "선택한 출발지";
+  const startLabel = request.start_label ?? start?.label ?? "선택한 출발지";
   const destination =
     request.route_type === "straight"
       ? STARTS.find(
@@ -181,12 +204,15 @@ export function makeMockCourse(
             s.coordinate[1] === request.end[1],
         )
       : undefined;
-  const endLabel = destination?.label ?? "선택한 목적지";
+  const endLabel =
+    (request.route_type === "straight" ? request.end_label : undefined) ??
+    destination?.label ??
+    "선택한 목적지";
   return courseSchema.parse({
     id:
       request.route_type === "straight"
-        ? `straight-${purpose.toLowerCase()}-${start?.id ?? "custom"}-${destination?.id ?? "custom"}-${request.time_of_day}-${rank}`
-        : `${purpose.toLowerCase()}-${start?.id ?? "custom"}-${request.target_distance_m}-${request.time_of_day}-${rank}`,
+        ? `straight-${purpose.toLowerCase()}-${placeId(request.start)}-${placeId(request.end)}-${request.time_of_day}-${rank}`
+        : `${purpose.toLowerCase()}-${placeId(request.start)}-${request.target_distance_m}-${request.time_of_day}-${rank}`,
     name:
       request.route_type === "straight"
         ? `${d.name} · 연결 ${rank + 1}`
