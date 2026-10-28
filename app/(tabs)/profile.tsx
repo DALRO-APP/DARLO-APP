@@ -17,7 +17,7 @@ export default function Profile() {
       <View style={{ flexDirection: "row", gap: 20, alignItems: "center" }}>
         <Mascot size={82} />
         <View style={{ gap: 8 }}>
-          <T style={{ fontSize: 23, fontWeight: "800" }}>달로 러너</T>
+          <T style={{ fontSize: 23, fontWeight: "800" }}>유저</T>
           <T muted style={{ fontSize: 12 }}>
             로그인 없이 체험하는 데모 프로필
           </T>
