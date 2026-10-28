@@ -48,3 +48,11 @@ vercel deploy --prod --yes
 배포 전 `vercel deploy --dry --json`에서 고정 자료 포함 및 `.env*`, `server/data/`, `.venv`, 원본 PDF·zip 제외를 확인한다. 실제 배포에서는 `/api/health`, 장소 검색, 실데이터 추천, 코스 선택·상세·새로고침·모의 러닝과 API 오류를 확인한다. Python/JS export나 Preview 빌드만으로 native APK/IPA·실기 검증을 보고하지 않는다.
 
 근거: [Vercel Python Functions](https://vercel.com/docs/functions/runtimes/python), [Vercel SQLite 영속성 제약](https://vercel.com/kb/guide/is-sqlite-supported-in-vercel), [배포 제외 설정](https://vercel.com/docs/deployments/vercel-ignore).
+
+## 검증 결과
+
+- 앱 검사 74개, 서버 테스트 28개, 실제 Vercel Linux의 `npm ci`·웹/Python 빌드 통과.
+- Linux 빌드에서 누락됐던 `@emnapi/core`·`@emnapi/runtime` 1.11.3 lockfile 항목을 기존 검증 버전으로 복원했다. 앱 의존성 선언이나 실행 중인 node_modules는 변경하지 않았다.
+- Preview `/api/health`: `temporary-demo`, 도로 9,276개·노드 6,906개·실제 자료 버전 정상.
+- 보호된 Preview의 Chrome 모바일·데스크톱에서 Straight 6.7km, Loop 5,112/4,699/4,658m, 신호등 묶음 3/2/0곳, 코스 선택·상세·새로고침·모의 러닝을 확인했다. 상세/새로고침이 서버 코스 저장 조회 없이 기기 캐시로 이어졌다. responder 경고 및 페이지 오류 0건.
+- Vercel의 Preview 보호 설정은 해제하지 않았다. CLI의 인증 기능을 사용해 검증했다. 실제 기기 검증은 수행하지 않았다.
