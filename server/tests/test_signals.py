@@ -67,3 +67,29 @@ def test_api_signals_match_count_and_survive_detail_read(database_url):
             session.commit()
         assert client.get(f"/v1/courses/{course['id']}").json()["signal_positions"] == course["signal_positions"]
     engine.dispose()
+
+
+def test_same_crosswalk_is_one_site_but_neighbouring_crosswalk_is_separate():
+    route = shapely.LineString([(198000, 448000), (198200, 448000)])
+    points = [shapely.Point(198030, 448001), shapely.Point(198060, 447999), shapely.Point(198066, 448001)]
+    graph = SimpleNamespace(facilities={
+        "signal": shapely.STRtree(points),
+        "crosswalk": shapely.STRtree([
+            shapely.box(198025, 447997, 198061, 448003),
+            shapely.box(198065, 447997, 198069, 448003),
+        ]),
+    })
+    result = to_xy(signal_positions(graph, route))
+    # 30m 떨어진 양쪽 부착대는 같은 횡단보도라 하나, 6m 옆 다른 횡단보도는 별개다.
+    assert len(result) == 2
+    assert any(abs(x - 198066) < 0.02 for x, _ in result)
+    assert all(min(shapely.Point(p).distance(source) for source in points) < 0.02 for p in result)
+
+
+def test_unmatched_duplicates_and_close_points_are_grouped_without_chaining():
+    route = shapely.LineString([(198000, 448000), (198100, 448000)])
+    points = [shapely.Point(198020, 448001), shapely.Point(198020, 448001), shapely.Point(198028, 448001), shapely.Point(198036, 448001)]
+    def positions(values):
+        return signal_positions(SimpleNamespace(facilities={"signal": shapely.STRtree(values)}), route)
+    assert len(positions(points)) == 2
+    assert positions(points) == positions(points[::-1])

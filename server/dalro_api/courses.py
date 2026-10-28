@@ -5,7 +5,10 @@ import hashlib
 import numpy as np
 import shapely
 
-from .config import BASE_PACE_S_PER_KM, FACILITY_BUFFER_M, SIGNAL_MARKER_BUFFER_M
+from .config import (
+    BASE_PACE_S_PER_KM, FACILITY_BUFFER_M, SIGNAL_MARKER_BUFFER_M,
+    SIGNAL_CROSSWALK_MATCH_M, SIGNAL_GROUP_DISTANCE_M,
+)
 from .geo import Position, haversine, to_lonlat, to_xy
 from .graph import Overlay
 from .routing import Candidate
@@ -79,7 +82,7 @@ def _count(overlay: Overlay, kind: str, buffer) -> int | None:
 
 
 def signal_positions(graph, route) -> list[list[float]] | None:
-    """경로 2m 안 신호 부착대의 실제 위치(EPSG:4326).
+    """경로 2m 안 신호를 같은 횡단보도/근접 묶음당 한 점으로 표시한다.
 
     도로 중심선과 시설 좌표 차이를 좁은 버퍼로 보완한다. 실시간 신호 상태가 아니다.
     """
@@ -87,8 +90,31 @@ def signal_positions(graph, route) -> list[list[float]] | None:
     if tree is None:
         return None
     indices = np.unique(tree.query(route, predicate="dwithin", distance=SIGNAL_MARKER_BUFFER_M))
-    points = [tuple(shapely.shortest_line(route, tree.geometries[i]).coords[-1]) for i in indices]
-    return [list(p) for p in to_lonlat(points)]
+    points = [shapely.Point(shapely.shortest_line(route, tree.geometries[i]).coords[-1]) for i in indices]
+    crossings = graph.facilities.get("crosswalk")
+    matched: dict[int, list] = {}
+    unmatched: list[list] = []
+    for point in sorted(points, key=lambda p: (p.x, p.y)):
+        nearby = (
+            crossings.query(point, predicate="dwithin", distance=SIGNAL_CROSSWALK_MATCH_M)
+            if crossings is not None else []
+        )
+        if len(nearby):
+            crossing = int(min(nearby, key=lambda i: (point.distance(crossings.geometries[i]), int(i))))
+            matched.setdefault(crossing, []).append(point)
+        else:
+            # 모든 점과 10m 이내인 묶음에만 합친다. 연쇄 병합으로 교차로 전체를 묶지 않는다.
+            group = next((g for g in unmatched if all(point.distance(p) <= SIGNAL_GROUP_DISTANCE_M for p in g)), None)
+            if group is None:
+                unmatched.append([point])
+            else:
+                group.append(point)
+    representatives = []
+    for group in [*matched.values(), *unmatched]:
+        center = shapely.MultiPoint(group).centroid
+        point = min(group, key=lambda p: (p.distance(center), p.x, p.y))
+        representatives.append((point.x, point.y))
+    return [list(p) for p in to_lonlat(sorted(representatives))]
 
 
 def build_course(
