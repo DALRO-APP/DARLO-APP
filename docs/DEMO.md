@@ -1,8 +1,8 @@
 # DALRO 시연 가이드
 
-1. `npm ci` → `npm run web` 또는 `npm run start:go`. 실제 native 카카오 지도는 [개발 앱 설치 가이드](NATIVE-MAPS.md)를 따른 뒤 `npm run start:dev`로 엽니다. Native 키가 설정된 Expo Go에서는 지도 설치 안내의 `시연 지도 보기`로 더미 시연을 계속할 수 있습니다.
-2. 홈에서 PACE / POWER / NIGHT / GREEN 중 오늘의 목적을 고릅니다. NIGHT는 야간이 기본입니다.
-3. 별도 러닝 방식 화면에서 `Loop` / `Straight`를 고릅니다. 다음 설정 화면에서 Loop는 출발지와 거리(3/5/7/10km·직접 입력 1~20km), Straight는 출발지와 목적지를 선택합니다. 장소는 검색하거나 시연 장소 3곳(이촌·남산·용산가족공원)에서 고릅니다. 용산구 밖 장소(예: "강남")를 고르면 베타 범위 안내 alert가 뜹니다. Straight 거리는 자동이며 두 장소를 교환할 수 있습니다. 주야간을 고르고 `코스 추천받기`를 누릅니다.
+1. `npm ci` → `npm run web` 또는 `npm run start:go`. 기본은 키 없이 열리는 팀 공간정보 다크 지도입니다. `EXPO_PUBLIC_MAP_STYLE=kakao`의 실제 native 카카오 지도는 [개발 앱 설치 가이드](NATIVE-MAPS.md)를 따른 뒤 `npm run start:dev`로 엽니다. Native 키가 설정된 Expo Go에서는 지도 설치 안내의 `시연 지도 보기`로 더미 시연을 계속할 수 있습니다.
+2. 홈에서 PACE를 고릅니다. POWER·NIGHT·GREEN은 흐린 카드와 자물쇠로 표시되며 베타 준비 중이라 선택할 수 없습니다.
+3. 별도 러닝 방식 화면에서 `Loop` / `Straight`를 고릅니다. 다음 설정 화면에서 Loop는 출발지와 거리(3/5/7/10km·직접 입력 1~20km), Straight는 출발지와 목적지를 선택합니다. 장소는 검색하거나 시연 장소 3곳(이촌·남산·용산가족공원)에서 고릅니다. 용산구 밖 장소(예: "강남")를 고르면 베타 범위 안내 alert가 뜹니다. Straight는 첫 번째 추천 코스의 예상 거리를 표시하며 두 장소를 교환하면 다시 계산합니다. 주야간을 고르고 `코스 추천받기`를 누릅니다.
 4. 큰 지도와 가로 카드에서 추천 1~3을 고릅니다. 선택한 목적에 맞는 더미 후보 세 개이며, 카드·추천 번호·지도 경로를 선택할 수 있습니다.
 5. `이 코스로 달리기` → 러닝 준비에서 하트로 코스 저장 → `러닝 시작`.
 6. `시연 도구`를 펼쳐 `시연 1분 이동`, `완주 시연`을 사용합니다. `일시정지`하면 `계속하기` / `러닝 종료`가 나타납니다. 완주하면 자동 정지합니다.
@@ -13,7 +13,7 @@
 
 앱을 완전히 다시 열면 진행 중 주행은 초기화하며 완료 기록·저장 전 결과·즐겨찾기·조건은 복원합니다. 현재 위치·주소 검색은 연결하지 않으며, 용산구 시연 장소 사이의 Loop와 Straight 더미 코스를 제공합니다. 자세한 변경 사항은 [화면 흐름 결정 문서](2026-10-06-러닝-화면-흐름.md)를 참고하세요.
 
-설명: mock 모드의 경로/환경 수치는 가상입니다. PACE는 아래 `hybrid` 모드에서 팀 전처리 실데이터로 추천합니다. GPS는 연결하지 않았습니다. 기본 배경은 도식 지도이고 웹에서 JavaScript 키를 설정하면 카카오 실제 지도 위에 시연 코스를 표시합니다. 설정은 [카카오 지도 가이드](KAKAO-MAPS.md)를 참고하세요. 실제 자료와 알고리즘을 서버로 연결할 예정입니다.
+설명: mock 모드의 경로/환경 수치는 가상입니다. PACE는 아래 `hybrid` 모드에서 팀 전처리 실데이터로 추천합니다. GPS는 연결하지 않았습니다. 기본 배경은 팀 실자료의 DEM·등고선·도로망·공원을 표시하는 공간정보 다크 지도입니다. mock 코스는 더미로 구분합니다. `EXPO_PUBLIC_MAP_STYLE=kakao`와 JavaScript 키를 설정하면 카카오 배경을 사용합니다. 설정은 [카카오 지도 가이드](KAKAO-MAPS.md)를 참고하세요. PACE는 hybrid 모드에서 실자료 기반 서버 추천을 사용합니다.
 
 ```sh
 npm run export:web
@@ -28,7 +28,7 @@ node scripts/serve-demo.mjs
 1. [server/README.md](../server/README.md)대로 노션 zip을 받아 임포트하고 `uvicorn dalro_api.main:app --host 0.0.0.0`을 실행합니다.
 2. 웹: `EXPO_PUBLIC_DATA_SOURCE=hybrid EXPO_PUBLIC_API_URL=http://localhost:8000 npm run web -- --clear`. 휴대폰 Expo Go를 쓰려면 같은 Wi-Fi에서 `EXPO_PUBLIC_API_URL=http://<맥 IP>:8000`으로 설정합니다. `EXPO_PUBLIC_*`는 번들에 인라인되므로 mock ↔ hybrid를 바꿀 때는 `--clear`로 Metro 캐시를 비웁니다. 비우지 않으면 이전 모드가 남습니다(export도 같음).
 3. PACE → Loop → 출발지·거리 → `코스 추천받기`. 실제 용산구 도로를 따르는 후보 2~3개가 나옵니다. 카드에는 지형 경사, 신호 부착대 수, 용산구 평균과 비교한 근거가 표시되고, 하단에 "실제 도로 자료로 만든 실험 추천"이 보입니다.
-4. 같은 화면에서 다른 목적을 고르면 기존 더미 코스와 "더미 코스" 안내가 나옵니다.
+4. 베타에서는 다른 목적을 선택할 수 없습니다. 선택 코스의 신호 부착대 위치는 공간정보 지도에 빨간 점으로 표시되며 추천 1·2·3 선택에 따라 바뀝니다.
 5. 장소 검색: `출발지 선택`에서 "효창"처럼 검색해 용산구 안 도로·공원을 고릅니다. 서버에 카카오 REST 키를 넣으면 역·건물 이름도 검색됩니다([server/README.md](../server/README.md)).
 6. 설명 포인트: 비용식은 팀 AHP 가중치(0.83/0.17, α=3)를 재현한 것입니다. 경사는 지형 경사입니다. 미군기지 내부 도로는 제외했습니다. 실제 안전 보장이나 현장 검증 결과가 아닙니다.
 
@@ -51,7 +51,7 @@ node scripts/serve-demo.mjs
 - Vercel에서 저장소를 가져오고 Framework Preset은 `Other`, Root Directory는 저장소 루트(`./`)로 둡니다. 설치·빌드 명령과 출력 폴더는 `vercel.json`에 지정되어 있습니다.
 - 현재 `package.json`의 Node.js 범위는 `>=22.14.0`이므로 Vercel에서는 기본 `24.x`를 사용할 수 있습니다. 로컬 웹 검증은 `22.14.0`에서 했습니다. `22.x`로 고정하려면 `package.json`의 engines 범위도 함께 변경해야 합니다. [Vercel Node.js 버전 규칙](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)을 참고하세요.
 - 로컬에서 배포하려면 프로젝트 루트에서 `npx vercel`을 실행하고 계정·프로젝트를 연결합니다.
-- 키 없이도 도식 지도로 시연할 수 있습니다. 카카오 지도를 쓰려면 Vercel 환경 변수에 `EXPO_PUBLIC_KAKAO_MAP_JS_KEY`를 설정하고 배포 도메인을 카카오에 등록한 뒤 다시 빌드합니다. 자세한 설정은 [카카오 지도 가이드](KAKAO-MAPS.md)를 참고하세요.
+- 키 없이도 공간정보 다크 지도로 시연할 수 있습니다. 카카오 지도를 쓰려면 `EXPO_PUBLIC_MAP_STYLE=kakao`와 함께 Vercel 환경 변수에 `EXPO_PUBLIC_KAKAO_MAP_JS_KEY`를 설정하고 배포 도메인을 카카오에 등록한 뒤 다시 빌드합니다. 자세한 설정은 [카카오 지도 가이드](KAKAO-MAPS.md)를 참고하세요.
 - 로컬 빌드: `EXPO_PUBLIC_DATA_SOURCE=mock npm run export:web`. 확인: `node scripts/serve-demo.mjs` → `http://localhost:4173`.
 
 `dist/`는 Git에 넣지 않습니다. 저장소를 통한 배포에서는 Vercel이 다시 빌드합니다.

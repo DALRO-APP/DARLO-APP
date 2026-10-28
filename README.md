@@ -1,6 +1,6 @@
 # DALRO
 
-오늘도, 더 좋은 길로. 용산구 공간정보 기반 맞춤 러닝 코스 앱입니다. 기본은 **더미 데이터 시연 프론트엔드**이고, **PACE 목적은 팀 전처리 실데이터로 추천하는 FastAPI 서버**([server/](server/README.md))와 연결할 수 있습니다.
+오늘도, 더 좋은 길로. 용산구 공간정보 기반 맞춤 러닝 코스 앱입니다. 베타에서는 **PACE만 선택 가능**하고 다른 모드는 준비 중으로 잠겨 있습니다. 기본은 **더미 데이터 시연 프론트엔드**이고, **PACE 목적은 팀 전처리 실데이터로 추천하는 FastAPI 서버**([server/](server/README.md))와 연결할 수 있습니다.
 
 Expo SDK 57 · React Native · TypeScript · Expo Router · Zustand · TanStack Query
 
@@ -24,7 +24,7 @@ Node 22.14 이상을 사용하세요. 지도 키·서버·로그인이 필요하
 - [장소 검색과 베타 범위](docs/2026-10-28-장소-검색-베타-범위.md)
 - [작업 규칙](AGENTS.md) · [훅 활성화/한계](docs/harness.md)
 
-mock 모드의 지도/경로/환경 수치는 가상입니다. GPS 측정은 아직 연결하지 않았습니다. 웹에서 JavaScript 키를 설정하면 배경은 카카오 실제 지도입니다. 검정/라임과 마스코트를 SVG 코드로 구성했습니다. PostGIS·인증은 포함하지 않습니다.
+기본 지도는 팀 자료의 DEM 음영·등고선·도로망·공원을 표시하는 어두운 공간정보 지도입니다. 키 없이 웹·모바일에서 같은 자료를 사용하며, 경사별 도로 색상과 레이어 선택·드래그·확대/축소를 지원합니다. [지도 자료와 재생성](docs/2026-10-28-공간정보-다크지도.md)을 참고하세요. mock 모드의 코스 경로와 환경 수치는 가상이고, 배경 공간정보는 실자료입니다. GPS 측정은 아직 연결하지 않았습니다. `EXPO_PUBLIC_MAP_STYLE=kakao`와 플랫폼별 키를 설정하면 기존 카카오 배경을 사용할 수 있습니다. PostGIS·인증은 포함하지 않습니다.
 
 ## PACE 실데이터 서버
 
@@ -38,7 +38,7 @@ EXPO_PUBLIC_DATA_SOURCE=hybrid EXPO_PUBLIC_API_URL=http://localhost:8000 npm run
 
 데이터 모드를 바꿀 때는 `--clear`로 Metro 캐시를 비워야 이전 `EXPO_PUBLIC_*` 값이 번들에 남지 않습니다.
 
-`hybrid`는 PACE만 서버로 보내고 POWER·NIGHT·GREEN은 더미로 시연합니다. 출발지·목적지는 서버로 검색합니다. 베타 버전은 용산구 안에서만 추천하며, 범위 밖 장소는 alert로 안내합니다. 카카오 장소 검색은 `server/.env.local`의 `KAKAO_REST_API_KEY`로 켭니다. 코스의 `is_mock`으로 화면 안내 문구를 구분합니다. `http`는 모든 목적을 서버로 보냅니다. repository가 `POST /v1/courses/recommendations`, `GET /v1/courses/{id}`를 호출하고 Zod 계약으로 응답을 검증합니다. 서버 장애 시 더미로 몰래 전환하지 않습니다. 웹·native 지도는 동일한 `RouteMapProps`를 사용합니다. Native 키 설정 시 카카오 지도는 **별도 개발 빌드**에서 사용하며 Expo Go에서는 설치 안내가 표시됩니다. 네이티브 컴파일·실기 렌더링 검증은 빌드 환경 준비 후 필요합니다.
+`hybrid`는 PACE만 서버로 보내고 POWER·NIGHT·GREEN은 베타 준비 중으로 잠겨 있습니다(내부 더미 구현은 보존). 출발지·목적지는 서버로 검색합니다. 베타 버전은 용산구 안에서만 추천하며, 범위 밖 장소는 alert로 안내합니다. 카카오 장소 검색은 `server/.env.local`의 `KAKAO_REST_API_KEY`로 켭니다. 코스의 `is_mock`으로 화면 안내 문구를 구분합니다. `http`는 모든 목적을 서버로 보냅니다. Straight 설정은 첫 추천 코스의 예상 거리를 미리 보여주며, 공간정보 지도에는 선택 코스의 신호등 위치를 빨간 점으로 표시합니다. [베타 UI·거리·신호등](docs/2026-10-28-PACE-베타-거리-신호등.md)을 참고하세요. repository가 `POST /v1/courses/recommendations`, `GET /v1/courses/{id}`를 호출하고 Zod 계약으로 응답을 검증합니다. 서버 장애 시 더미로 몰래 전환하지 않습니다. 웹·native 지도는 동일한 `RouteMapProps`를 사용합니다. 공간정보 지도는 기존 SVG 의존성을 사용합니다. 카카오 모드의 native 지도는 **별도 개발 빌드**가 필요하며 Expo Go에서는 설치 안내가 표시됩니다. 네이티브 컴파일·실기 렌더링 검증은 빌드 환경 준비 후 필요합니다.
 
 ```sh
 npm run check

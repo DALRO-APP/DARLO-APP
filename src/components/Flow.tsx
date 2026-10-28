@@ -52,7 +52,7 @@ export function DemoNote({
           : mock === false
             ? "용산구 실제 도로 자료로 만든 실험 추천 · 환경 지표는 실제 안전을 보장하지 않아요."
             : dataSource === "hybrid"
-              ? `${[...serverPurposes].join("·")}는 용산구 실제 도로 자료로 추천해요 · 다른 목적은 시연용 더미예요.`
+              ? `${[...serverPurposes].join("·")}는 용산구 실제 도로 자료로 추천해요 · 다른 모드는 베타 준비 중이에요.`
               : "환경 지표는 실제 안전을 보장하지 않아요."}
     </T>
   );

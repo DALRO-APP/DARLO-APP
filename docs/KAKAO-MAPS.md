@@ -1,5 +1,7 @@
 # 카카오 지도: 로컬 확인과 웹 배포
 
+기본 지도는 [공간정보 다크 지도](2026-10-28-공간정보-다크지도.md)다. 이 문서의 카카오 공급자를 쓰려면 `.env.local`에 `EXPO_PUBLIC_MAP_STYLE=kakao`를 지정하고 `--clear`로 Expo를 재시작한다.
+
 웹은 Kakao Maps JavaScript SDK를 사용한다. `RouteMap.web.tsx`가 웹에서만 로드되며 iOS/Android의 `RouteMap.tsx`는 Native 키와 별도 개발 빌드가 있으면 로컬 Expo 모듈로 공식 Kakao SDK를 사용한다. native 설치는 [아이폰·Android 가이드](NATIVE-MAPS.md)를 참고한다. 두 공급자는 동일 `RouteMapProps`를 받으므로 서버의 GeoJSON 계약을 바꾸지 않는다.
 
 ## 로컬 설정

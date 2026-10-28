@@ -31,6 +31,7 @@ export const usePreferences = create<Preferences>()(
           request: recommendationRequestSchema.parse({
             ...state.request,
             ...patch,
+            purpose: "PACE",
           }),
         })),
       toggleFavorite: (id) =>
@@ -44,6 +45,22 @@ export const usePreferences = create<Preferences>()(
       name: "dalro-preferences-v1",
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (s) => ({ request: s.request, favorites: s.favorites }),
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<Preferences> | undefined;
+        const request = recommendationRequestSchema.safeParse({
+          ...(saved?.request ?? current.request),
+          purpose: "PACE",
+        });
+        return {
+          ...current,
+          request: request.success ? request.data : current.request,
+          favorites: Array.isArray(saved?.favorites)
+            ? saved.favorites.filter(
+                (id): id is string => typeof id === "string",
+              )
+            : current.favorites,
+        };
+      },
     },
   ),
 );

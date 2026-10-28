@@ -70,7 +70,7 @@ export default function Home() {
             오늘은 어떻게{"\n"}달려볼까요?
           </T>
           <T muted style={{ fontSize: 13 }}>
-            목적을 고르면, 나에게 맞는 길을 찾아요.
+            베타에서는 PACE 코스를 추천해요.
           </T>
         </View>
         <Mascot size={wide ? 125 : 72} />
@@ -119,6 +119,11 @@ export default function Home() {
             key={p}
             accessibilityRole="button"
             accessibilityLabel={`${p} 목적 선택`}
+            accessibilityState={{ disabled: p !== "PACE" }}
+            accessibilityHint={
+              p !== "PACE" ? "베타 준비 중인 모드예요" : undefined
+            }
+            disabled={p !== "PACE"}
             onPress={() => {
               update({
                 purpose: p,
@@ -138,19 +143,46 @@ export default function Home() {
               gap: 10,
             })}
           >
-            <Icon name={PURPOSES[p].icon} color={PURPOSES[p].color} size={27} />
-            <T
-              style={{
-                fontWeight: "800",
-                fontSize: 21,
-                color: PURPOSES[p].color,
-              }}
-            >
-              {p}
-            </T>
-            <T muted style={{ fontSize: 12, lineHeight: 19 }}>
-              {prompts[p]}
-            </T>
+            <View style={{ gap: 10, opacity: p === "PACE" ? 1 : 0.3 }}>
+              <Icon
+                name={PURPOSES[p].icon}
+                color={PURPOSES[p].color}
+                size={27}
+              />
+              <T
+                style={{
+                  fontWeight: "800",
+                  fontSize: 21,
+                  color: PURPOSES[p].color,
+                }}
+              >
+                {p}
+              </T>
+              <T muted style={{ fontSize: 12, lineHeight: 19 }}>
+                {prompts[p]}
+              </T>
+            </View>
+            {p !== "PACE" && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: 15,
+                  right: 13,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  paddingHorizontal: 7,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                  backgroundColor: colors.elevated,
+                }}
+              >
+                <Icon name="lock-closed" size={11} color={colors.muted} />
+                <T muted style={{ fontSize: 10 }}>
+                  베타 준비 중
+                </T>
+              </View>
+            )}
           </Pressable>
         ))}
       </View>

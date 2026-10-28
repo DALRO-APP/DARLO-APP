@@ -15,13 +15,14 @@ test("목적 → 조건 → 추천 → 준비 → 모의 러닝 → 결과 저�
     fullPage: true,
   });
   await page
-    .getByRole("button", { name: "NIGHT 목적 선택", exact: true })
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Straight 선택", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Loop 선택", exact: true }).click();
-  await expect(page.getByText("NIGHT · Loop", { exact: true })).toBeVisible();
+  await expect(page.getByText("PACE · Loop", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "야간", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "야간", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -38,9 +39,9 @@ test("목적 → 조건 → 추천 → 준비 → 모의 러닝 → 결과 저�
   await page
     .getByRole("button", { name: "코스 추천받기", exact: true })
     .click();
-  await expect(page.getByText("빛을 따라 달로", { exact: true })).toBeVisible();
+  await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("오늘의 NIGHT 코스", { exact: true }),
+    page.getByText("오늘의 PACE 코스", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "추천 2", exact: true }).click();
   await expect(
@@ -82,7 +83,7 @@ test("목적 → 조건 → 추천 → 준비 → 모의 러닝 → 결과 저�
   await page.getByRole("button", { name: "러닝 종료", exact: true }).click();
   await expect(page.getByText("3.00 km", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("NIGHT 환경 점수 94점", { exact: true }),
+    page.getByText("PACE 환경 점수 91점", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: `test-results/${test.info().project.name}-result.png`,
@@ -99,10 +100,10 @@ test("목적 → 조건 → 추천 → 준비 → 모의 러닝 → 결과 저�
     .getByRole("button", { name: "저장한 코스 1", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "빛을 따라 달로 상세 보기", exact: true }),
+    page.getByRole("button", { name: "한강 리듬 코스 상세 보기", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "빛을 따라 달로 상세 보기", exact: true })
+    .getByRole("button", { name: "한강 리듬 코스 상세 보기", exact: true })
     .click();
   await page.getByRole("button", { name: "러닝 시작", exact: true }).click();
   await expect(page.getByText("모의 러닝 중", { exact: true })).toBeVisible();
@@ -180,7 +181,7 @@ test("기록 / 런닝 / 마이 3탭과 홈의 조건·기록·저장 코스 바�
 test("거리 직접 입력 검증과 코스 새로고침 복원", async ({ page }) => {
   await page.goto("/");
   await page
-    .getByRole("button", { name: "GREEN 목적 선택", exact: true })
+    .getByRole("button", { name: "PACE 목적 선택", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Straight 선택", exact: true }),
@@ -203,7 +204,7 @@ test("거리 직접 입력 검증과 코스 새로고침 복원", async ({ page 
   await page
     .getByRole("button", { name: "코스 추천받기", exact: true })
     .click();
-  await expect(page.getByText("초록 쉼표 코스", { exact: true })).toBeVisible();
+  await expect(page.getByText("한강 리듬 코스", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "추천 3", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "추천 3", exact: true }),
@@ -211,10 +212,10 @@ test("거리 직접 입력 검증과 코스 새로고침 복원", async ({ page 
   await page
     .getByRole("button", { name: "이 코스로 달리기", exact: true })
     .click();
-  await expect(page).toHaveURL(/green-ichon-7500-day-2/);
+  await expect(page).toHaveURL(/pace-ichon-7500-day-2/);
   await page.reload();
   await expect(
-    page.getByText("초록 쉼표 코스 · 짧은 루프", { exact: true }),
+    page.getByText("한강 리듬 코스 · 짧은 루프", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("7.2km", { exact: true })).toBeVisible();
 });

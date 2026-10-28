@@ -11,7 +11,7 @@ import { notify } from "./notify";
 import { Button, Chip, Icon, Panel, Status, T } from "./ui";
 import { STARTS } from "../domain/catalog";
 import { parseDistanceKm, placeLabel } from "../domain/presentation";
-import { usePlaceSearch } from "../services/queries";
+import { usePlaceSearch, useRecommendations } from "../services/queries";
 import { usePreferences } from "../state/preferences";
 import { colors } from "../theme/tokens";
 import { haversine, type Position } from "../domain/contracts";
@@ -34,6 +34,8 @@ interface Option {
 export function Conditions({ onRecommend }: { onRecommend: () => void }) {
   const request = usePreferences((s) => s.request);
   const update = usePreferences((s) => s.update);
+  const preview = useRecommendations(request.route_type === "straight");
+  const firstCourse = preview.data?.courses[0];
   const [selecting, setSelecting] = useState<"start" | "end" | null>(null);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -179,13 +181,57 @@ export function Conditions({ onRecommend }: { onRecommend: () => void }) {
               출발지와 목적지 바꾸기
             </T>
           </Pressable>
-          <Panel style={{ padding: 17, gap: 7 }}>
-            <T style={{ fontWeight: "700", fontSize: 14 }}>
-              거리는 자동으로 정해져요
+          <Panel
+            testID="straight-distance-preview"
+            style={{ padding: 17, gap: 9 }}
+          >
+            <T muted style={{ fontSize: 12 }}>
+              예상 거리
             </T>
-            <T muted style={{ fontSize: 12, lineHeight: 19 }}>
-              선택한 출발지와 목적지를 잇는 코스를 추천해요.
-            </T>
+            {preview.isPending ? (
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 9 }}
+              >
+                <ActivityIndicator size="small" color={colors.lime} />
+                <T muted style={{ fontSize: 14 }}>
+                  거리 계산 중이에요
+                </T>
+              </View>
+            ) : preview.isError ? (
+              <>
+                <T style={{ fontSize: 14 }}>거리를 불러오지 못했어요</T>
+                <T muted style={{ fontSize: 12 }}>
+                  {preview.error.message}
+                </T>
+                <Chip
+                  label="거리 다시 계산"
+                  icon="refresh"
+                  onPress={() => void preview.refetch()}
+                />
+              </>
+            ) : firstCourse ? (
+              <>
+                <T accent style={{ fontSize: 28, fontWeight: "800" }}>
+                  약 {(firstCourse.summary.distance_m / 1000).toFixed(1)} km
+                </T>
+                <T muted style={{ fontSize: 12, lineHeight: 19 }}>
+                  첫 번째 추천 코스 기준 · 선택한 출발지와 목적지를 잇는
+                  거리예요.
+                </T>
+                {firstCourse.is_mock && (
+                  <T muted style={{ fontSize: 11 }}>
+                    더미 코스 기준 예상 거리예요.
+                  </T>
+                )}
+              </>
+            ) : (
+              <>
+                <T style={{ fontSize: 14 }}>연결 가능한 코스가 없어요</T>
+                <T muted style={{ fontSize: 12 }}>
+                  출발지나 목적지를 바꿔 주세요.
+                </T>
+              </>
+            )}
           </Panel>
         </>
       ) : (

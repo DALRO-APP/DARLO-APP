@@ -1,5 +1,7 @@
 # DALRO 데이터 전달 규격 — 팀원 공유용
 
+2026-10-28 추가: Course의 선택 필드 `signal_positions`는 경로 선이 신호 부착대 원본 도형과 실제 교차하는 지점의 배열(EPSG:4326 `[경도, 위도]`)이다. 주변 버퍼나 스냅으로 위치를 포함하지 않는다. `null`은 자료 미확인, `[]`는 교차 지점 0개, 생략은 이전 응답이다. `summary.signal_count`는 기존 10m 주변 시설 수이므로 교차점 배열 개수와 구분한다. 이 필드는 실제 점등 상태나 교차로 개수를 뜻하지 않는다. [베타 UI·거리·신호등 표시](2026-10-28-PACE-베타-거리-신호등.md)를 참고한다.
+
 > 2026-10-01 · 초안 v1.0 · 2026-10-06 Loop/Straight 확장 · 1차 지역: 서울 용산구
 >
 > 서버와 추천 코스를 앱에 연결하기 위한 공통 규격 제안입니다. 아래 컬럼과 단위는 **새로 제안하는 계약**입니다.
@@ -107,11 +109,11 @@ Straight 요청은 `route_type: "straight"`, `end: [경도, 위도]`, `target_di
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | 최상위       | schema_version="1.0", request_id, courses(0~3개, 추천 순서)                                                                                  |
 | 기본         | id, name, subtitle, purpose, region, start_label                                                                                             |
-| 방식/목적지 | route_type=loop/straight. 기존 응답의 누락은 loop로 호환. Straight는 end=[lon,lat], end_label 필수 |
+| 방식/목적지  | route_type=loop/straight. 기존 응답의 누락은 loop로 호환. Straight는 end=[lon,lat], end_label 필수                                           |
 | geometry     | LineString, [lon,lat] 최소 4점. 실제 도로 순서대로 이어진 경로                                                                               |
 | summary      | distance_m, estimated_duration_s, elevation_gain_m, avg_slope_pct, signal_count, crossing_count, light_count, green_ratio, environment_score |
 | summary 결측 | 거리/시간 필수 양수. 나머지는 null 가능. environment_score는 0~100 환경 지표이며 안전 보장 아님                                              |
-| reasons      | code, title, description. code=flat/hill/lighting/green/signals/loop/destination                                                                         |
+| reasons      | code, title, description. code=flat/hill/lighting/green/signals/loop/destination                                                             |
 | segments     | id, name, description, distance_from_start_m. 시작·주요 구간·도착 누적 거리 오름차순                                                         |
 | edge_ids     | 실제 방문 순서. 왕복/반복 ID 허용, 서버가 방향을 추적                                                                                        |
 | 출처         | data_version, algorithm_version, is_mock                                                                                                     |

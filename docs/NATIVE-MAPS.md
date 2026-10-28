@@ -1,5 +1,7 @@
 # 아이폰·Android 카카오 지도 개발 앱
 
+기본 지도는 키 없이 동작하는 [공간정보 다크 지도](2026-10-28-공간정보-다크지도.md)다. 아래는 `.env.local`에 `EXPO_PUBLIC_MAP_STYLE=kakao`를 지정한 경우의 설치 방법이다.
+
 웹은 JavaScript SDK를 사용하고 모바일은 공식 Kakao Maps SDK를 로컬 Expo 모듈로 연결한다. **Native 키를 입력해도 Expo Go에 SDK가 추가되지는 않는다.** 별도로 빌드한 DALRO 앱이 필요하다. 지금은 연결 코드·빌드 준비 검증까지 완료했으며 native 컴파일·실기 인증/렌더링은 아직 검증하지 않았다.
 
 ## 아이폰 등록과 환경

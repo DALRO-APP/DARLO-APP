@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { STARTS } from "../domain/catalog";
 import { usePreferences } from "./preferences";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: {
     getItem: vi.fn(async () => null),
@@ -50,5 +51,33 @@ describe("Loop / Straight 조건 전환", () => {
     const valid = usePreferences.getState().request;
     expect(() => update({ end: STARTS[1]!.coordinate })).toThrow();
     expect(usePreferences.getState().request).toEqual(valid);
+  });
+});
+
+describe("PACE 베타 제한", () => {
+  it("다른 목적을 넣어도 새 추천 조건은 PACE로 유지한다", () => {
+    for (const purpose of ["POWER", "NIGHT", "GREEN"] as const) {
+      usePreferences.getState().update({ purpose });
+      expect(usePreferences.getState().request.purpose).toBe("PACE");
+    }
+  });
+  it("이전에 저장한 NIGHT 조건을 불러와도 장소·시간대·즐겨찾기를 보존하며 PACE로 전환한다", async () => {
+    const request = {
+      ...usePreferences.getState().request,
+      purpose: "NIGHT",
+      time_of_day: "night",
+    };
+    vi.mocked(AsyncStorage.getItem).mockResolvedValueOnce(
+      JSON.stringify({
+        state: { request, favorites: ["saved-night-course"] },
+        version: 0,
+      }),
+    );
+    await usePreferences.persist.rehydrate();
+    expect(usePreferences.getState().request).toEqual({
+      ...request,
+      purpose: "PACE",
+    });
+    expect(usePreferences.getState().favorites).toEqual(["saved-night-course"]);
   });
 });

@@ -4,7 +4,7 @@
 
 DALRO는 도시 공간정보를 이용한 개인 맞춤 러닝 코스 추천 앱이다. 이 저장소는 Expo SDK 57 + React Native + TypeScript 프론트엔드다. 파일 라우팅은 Expo Router, 앱 상태는 Zustand, 서버 조회는 TanStack Query를 사용한다.
 
-현재 목표는 **용산구 데이터로 교수님께 앱 흐름을 시연**하는 것이다. PACE·POWER·NIGHT·GREEN 목적, 출발지, 거리, 주야간 조건과 Loop/Straight 코스를 다룬다. PACE는 `server/`(FastAPI·SQLAlchemy·SQLite)가 팀 전처리 실데이터로 추천한다. 나머지 목적의 알고리즘·PostGIS·인증·GPS 수집은 후속 작업이다.
+현재 목표는 **용산구 데이터로 교수님께 앱 흐름을 시연**하는 것이다. 베타에서는 PACE만 선택할 수 있고 POWER·NIGHT·GREEN은 준비 중으로 잠근다. 출발지, 거리, 주야간 조건과 Loop/Straight 코스를 다룬다. PACE는 `server/`(FastAPI·SQLAlchemy·SQLite)가 팀 전처리 실데이터로 추천한다. 나머지 목적의 알고리즘·PostGIS·인증·GPS 수집은 후속 작업이다.
 
 ## 작업 원칙
 
@@ -44,7 +44,7 @@ pdf/                       원본 제안 발표와 대본 (수정 금지)
 - 화면에서 직접 fetch/공간 분석을 하지 않는다. 서버 데이터는 `CourseRepository`와 Query를 경유한다.
 - 입력과 로컬 즐겨찾기·시연 기록은 Zustand에 둔다. 서버 코스 원본을 별도 전역 상태에 복제하지 않는다.
 - mock/http는 동일 계약을 사용하며 HTTP 응답은 Zod로 검증한다. 서버 장애에서 몰래 mock으로 전환하지 않는다.
-- 지도 교체 시 `RouteMapProps`를 보존한다. 웹은 JavaScript SDK, native 개발 빌드는 로컬 Expo 모듈을 사용한다. 더미 경로·모의 주행을 실제 추천/GPS로 표현하지 않는다. 키가 없으면 도식 지도, Native 키를 설정한 Expo Go는 설치 안내와 사용자가 선택하는 도식 지도를 제공한다.
+- 지도 교체 시 `RouteMapProps`를 보존한다. 기본은 번들한 팀 DEM·등고선·도로망·공원을 표시하는 SVG 공간정보 지도다. `EXPO_PUBLIC_MAP_STYLE=kakao`에서는 웹 JavaScript SDK, native 개발 빌드 로컬 Expo 모듈을 사용한다. 더미 경로·모의 주행을 실제 추천/GPS로 표현하지 않는다. 카카오 모드에서 키가 없으면 도식 지도, Native 키를 설정한 Expo Go는 설치 안내와 사용자가 선택하는 도식 지도를 제공한다.
 - native 코드 변경은 JS export 외에 플랫폼 컴파일·실기 검증이 필요하다. Xcode/Android SDK/서명 정보가 없으면 그 한계를 명시한다. generated `/ios`, `/android`는 커밋하지 않고 `modules/.../ios`, `modules/.../android` 소스를 관리한다.
 - GeoJSON은 EPSG:4326, 좌표는 `[경도, 위도]`, 거리는 m, 시간은 s, 경사는 %이다.
 - 도로 통합은 고정 `edge_id`와 원본 `network_version`으로 한다. 미측정은 null, 측정된 0은 0이다.

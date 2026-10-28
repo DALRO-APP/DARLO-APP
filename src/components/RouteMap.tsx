@@ -17,9 +17,18 @@ import {
 import { colors } from "../theme/tokens";
 import { RouteMap as OfflineMap, type RouteMapProps } from "./RouteMapOffline";
 import { Button, Icon, T } from "./ui";
+import { TerrainRouteMap } from "./TerrainRouteMap";
 export type { RouteMapProps } from "./RouteMapOffline";
 
 export function RouteMap(props: RouteMapProps) {
+  return process.env.EXPO_PUBLIC_MAP_STYLE === "kakao" ? (
+    <StreetRouteMap {...props} />
+  ) : (
+    <TerrainRouteMap {...props} />
+  );
+}
+
+function StreetRouteMap(props: RouteMapProps) {
   const [offline, setOffline] = useState(false);
   const key = process.env.EXPO_PUBLIC_KAKAO_MAP_NATIVE_KEY;
   const expoGo =

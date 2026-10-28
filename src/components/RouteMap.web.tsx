@@ -14,6 +14,7 @@ import {
 } from "./RouteMapOffline";
 import { Button, Icon, T } from "./ui";
 import { routeProgress } from "../maps/progress";
+import { TerrainRouteMap } from "./TerrainRouteMap";
 export type { RouteMapProps } from "./RouteMapOffline";
 
 function marker(text: string, color: string): HTMLDivElement {
@@ -33,6 +34,8 @@ function marker(text: string, color: string): HTMLDivElement {
 }
 
 export function RouteMap(props: RouteMapProps) {
+  if (process.env.EXPO_PUBLIC_MAP_STYLE !== "kakao")
+    return <TerrainRouteMap {...props} />;
   const key = process.env.EXPO_PUBLIC_KAKAO_MAP_JS_KEY;
   return key ? (
     <KakaoRouteMap {...props} apiKey={key} />
