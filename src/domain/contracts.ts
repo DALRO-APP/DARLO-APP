@@ -88,7 +88,7 @@ export const courseSchema = z
       )
       .min(2),
     edge_ids: z.array(z.string()),
-    // 경로 3m 안 신호 부착대 위치. 10m 주변 시설 수와는 구분한다.
+    // 경로 2m 안 신호 부착대 위치. 10m 주변 시설 수와는 구분한다.
     signal_positions: z.array(positionSchema).nullable().optional(),
     data_version: z.string(),
     algorithm_version: z.string(),

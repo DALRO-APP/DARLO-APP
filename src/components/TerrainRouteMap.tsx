@@ -386,6 +386,21 @@ export function TerrainRouteMap({
             </Pressable>
           ))}
         </View>
+        {selected?.signal_positions && (
+          <View pointerEvents="none" style={styles.signalCount}>
+            <View
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: 3,
+                backgroundColor: "#FF746C",
+              }}
+            />
+            <T style={{ fontSize: 10, color: "#DDE7D5" }}>
+              신호등 {selected.signal_positions.length}곳
+            </T>
+          </View>
+        )}
         <View style={styles.controls}>
           <T
             style={{
@@ -459,23 +474,6 @@ export function TerrainRouteMap({
               {selected?.route_type === "straight"
                 ? `${selected.start_label} → ${selected.end_label}`
                 : (selected?.start_label ?? "용산구 공간정보")}
-            </T>
-            <T style={{ fontSize: 10, color: "#8A9B88" }}>
-              DEM 5m · 도로망
-              {selected
-                ? selected.is_mock
-                  ? " · 더미 코스"
-                  : " · 실데이터 코스"
-                : ""}
-              {selected && (
-                <T style={{ color: "#FF8A80" }}>
-                  {" "}
-                  · ● 인접 신호등{" "}
-                  {selected.signal_positions
-                    ? `${selected.signal_positions.length}곳`
-                    : "위치 미확인"}
-                </T>
-              )}
             </T>
           </View>
           <Pressable
@@ -555,6 +553,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#111B17EB",
   },
   layerActive: { borderColor: "#627854", backgroundColor: "#263723EF" },
+  signalCount: {
+    position: "absolute",
+    top: 83,
+    left: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: "#101A17E8",
+  },
   controls: { position: "absolute", right: 12, top: 15, gap: 4 },
   control: {
     width: 32,

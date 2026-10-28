@@ -79,7 +79,7 @@ def _count(overlay: Overlay, kind: str, buffer) -> int | None:
 
 
 def signal_positions(graph, route) -> list[list[float]] | None:
-    """경로 3m 안 신호 부착대의 실제 위치(EPSG:4326).
+    """경로 2m 안 신호 부착대의 실제 위치(EPSG:4326).
 
     도로 중심선과 시설 좌표 차이를 좁은 버퍼로 보완한다. 실시간 신호 상태가 아니다.
     """
