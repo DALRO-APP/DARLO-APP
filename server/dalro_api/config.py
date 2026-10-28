@@ -40,6 +40,7 @@ PACE_ALPHA = 3.0  # 팀 실험값 a=0,1,3,5 중 '적정 우회'
 STOP_DENSITY_CAP = 0.275  # Q3 + 1.5·IQR, 시설 수/m
 
 FACILITY_BUFFER_M = 10.0  # 팀 공간 결합과 같은 10m 버퍼
+SIGNAL_MARKER_BUFFER_M = 3.0  # 지도 신호등 표시는 경로에 바짝 붙은 시설만 포함
 SNAP_RADIUS_M = 50.0
 BASE_PACE_S_PER_KM = 372  # 6′12″/km. 예상 시간 표시용 가정
 # 러너가 통행할 수 없거나 PACE 코스에서 제외하는 도로 유형

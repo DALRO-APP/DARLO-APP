@@ -3,6 +3,10 @@ import { test, expect } from "@playwright/test";
 test("공간정보 지도에서 레이어·확대·코스 선택·상세 진입", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (message) => {
+    if (/Unknown event handler property.*onResponder/.test(message.text()))
+      errors.push(message.text());
+  });
   await page.goto("/");
   await page
     .getByRole("button", { name: "PACE 목적 선택", exact: true })
@@ -16,6 +20,16 @@ test("공간정보 지도에서 레이어·확대·코스 선택·상세 진입"
   await expect(page.getByTestId("kakao-map")).toHaveCount(0);
   const svg = map.getByLabel("용산구 공간정보 코스 지도");
   await expect(svg.locator("image")).toHaveCount(1);
+  const routes = svg.locator('[data-testid^="route-line-"]');
+  const firstRoute = await routes.last().getAttribute("data-testid");
+  await routes.first().dispatchEvent("click");
+  await expect(
+    page.getByRole("button", { name: "추천 2", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await svg.getByTestId(firstRoute!).dispatchEvent("click");
+  await expect(
+    page.getByRole("button", { name: "추천 1", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   const before = await svg.getAttribute("viewBox");
   await map.getByRole("button", { name: "지도 확대", exact: true }).click();
   await expect(svg).not.toHaveAttribute("viewBox", before!);

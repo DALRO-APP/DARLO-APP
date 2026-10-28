@@ -5,7 +5,7 @@ import hashlib
 import numpy as np
 import shapely
 
-from .config import BASE_PACE_S_PER_KM, FACILITY_BUFFER_M
+from .config import BASE_PACE_S_PER_KM, FACILITY_BUFFER_M, SIGNAL_MARKER_BUFFER_M
 from .geo import Position, haversine, to_lonlat, to_xy
 from .graph import Overlay
 from .routing import Candidate
@@ -79,15 +79,15 @@ def _count(overlay: Overlay, kind: str, buffer) -> int | None:
 
 
 def signal_positions(graph, route) -> list[list[float]] | None:
-    """경로 선과 실제로 교차하는 신호 부착대의 교차점(EPSG:4326).
+    """경로 3m 안 신호 부착대의 실제 위치(EPSG:4326).
 
-    주변 버퍼·스냅 없이 원본과의 교차점만 쓴다. 실시간 신호 상태가 아니다.
+    도로 중심선과 시설 좌표 차이를 좁은 버퍼로 보완한다. 실시간 신호 상태가 아니다.
     """
     tree = graph.facilities.get("signal")
     if tree is None:
         return None
-    indices = np.unique(tree.query(route, predicate="intersects"))
-    points = [tuple(route.intersection(tree.geometries[i]).representative_point().coords[0]) for i in indices]
+    indices = np.unique(tree.query(route, predicate="dwithin", distance=SIGNAL_MARKER_BUFFER_M))
+    points = [tuple(shapely.shortest_line(route, tree.geometries[i]).coords[-1]) for i in indices]
     return [list(p) for p in to_lonlat(points)]
 
 

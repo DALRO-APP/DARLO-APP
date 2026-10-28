@@ -28,6 +28,7 @@ import { routeProgress } from "../maps/progress";
 import { colors } from "../theme/tokens";
 import type { RouteMapProps } from "./RouteMapOffline";
 import { Icon, T } from "./ui";
+import { RouteLineGroup } from "./RouteLineGroup";
 
 const slopeColors = ["#637B6C", "#B4A474", "#CE9069", "#4C5854"];
 const labels: { name: string; position: Position }[] = [
@@ -265,7 +266,11 @@ export function TerrainRouteMap({
                 const active = course.id === selected?.id;
                 const points = linePoints(course.geometry.coordinates);
                 return (
-                  <G key={course.id} onPress={() => onSelect?.(course.id)}>
+                  <RouteLineGroup
+                    key={course.id}
+                    id={course.id}
+                    onSelect={onSelect ? () => onSelect(course.id) : undefined}
+                  >
                     <Polyline
                       points={points}
                       fill="none"
@@ -292,7 +297,7 @@ export function TerrainRouteMap({
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
-                  </G>
+                  </RouteLineGroup>
                 );
               })}
             {selected && selected.signal_positions && (
@@ -465,7 +470,7 @@ export function TerrainRouteMap({
               {selected && (
                 <T style={{ color: "#FF8A80" }}>
                   {" "}
-                  · ● 통과 신호등{" "}
+                  · ● 인접 신호등{" "}
                   {selected.signal_positions
                     ? `${selected.signal_positions.length}곳`
                     : "위치 미확인"}

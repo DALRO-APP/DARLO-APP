@@ -11,21 +11,25 @@ from dalro_api.main import create_app
 from dalro_api.models import Facility, StoredCourse
 
 
-def test_signals_only_use_exact_intersections_without_buffer_or_snap():
-    # 반복 구간도 한 번만 세고, 1mm 옆의 평행선·점도 표시하지 않는다.
+def test_signals_use_tight_three_metre_buffer_and_keep_source_positions():
+    # 반복 구간은 한 번만 세며, 3m 경계는 포함하고 바로 바깥은 제외한다.
     route = shapely.LineString([(198000, 448000), (198100, 448000), (198000, 448000)])
     tree = shapely.STRtree([
         shapely.Point(198020, 448000),
         shapely.LineString([(198040, 447990), (198040, 448030)]),
-        shapely.Point(198050, 448000.001),
-        shapely.LineString([(198010, 448000.001), (198090, 448000.001)]),
-        shapely.Point(198060, 448011),
+        shapely.Point(198050, 448003),
+        shapely.LineString([(198010, 448002), (198090, 448002)]),
+        shapely.Point(198060, 448003.001),
+        shapely.Point(198070, 448010),
     ])
     graph = SimpleNamespace(facilities={"signal": tree})
     positions = signal_positions(graph, route)
-    assert len(positions) == 2
+    assert len(positions) == 4
+    distances = []
     for point in to_xy(positions):
-        assert route.distance(shapely.Point(point)) <= 0.02  # 경위도 소수 7자리 전송 오차만 허용
+        distances.append(route.distance(shapely.Point(point)))
+    assert max(distances) <= 3.02  # 경위도 소수 7자리 전송 오차만 허용
+    assert max(distances) >= 2.98  # 시설 위치를 경로 위로 억지로 옮기지 않는다.
     assert signal_positions(graph, shapely.LineString([(190000, 440000), (190100, 440000)])) == []
     assert signal_positions(SimpleNamespace(facilities={}), route) is None
 
@@ -51,7 +55,7 @@ def test_api_signals_match_count_and_survive_detail_read(database_url):
             assert len(course["signal_positions"]) <= course["summary"]["signal_count"]
             line = shapely.LineString(to_xy(course["geometry"]["coordinates"]))
             for p in to_xy(course["signal_positions"]):
-                assert line.distance(shapely.Point(p)) <= 0.02
+                assert line.distance(shapely.Point(p)) <= 3.02
             assert client.get(f"/v1/courses/{course['id']}").json()["signal_positions"] == course["signal_positions"]
         # 새 필드가 없는 이전 저장 코스도 같은 버전이면 위치를 보완한다.
         course = courses[0]
