@@ -120,8 +120,16 @@ test("모바일 웹은 페이지 확대를 막고 지도만 두 손가락으로 
     });
   await touch("touchStart", 30);
   for (const gap of [45, 60, 75, 90]) await touch("touchMove", gap);
+  // 손가락이 닿아 있는 동안은 SVG를 다시 그리지 않고 transform으로만 움직인다.
+  await expect(svg).toHaveAttribute("viewBox", before!);
+  expect(
+    await svg.evaluate((node) => node.parentElement!.style.transform),
+  ).toContain("scale(");
   await touch("touchEnd", 0);
   await expect(svg).not.toHaveAttribute("viewBox", before!);
+  expect(
+    await svg.evaluate((node) => node.parentElement!.style.transform),
+  ).toBe("");
   const zoomed = Number((await svg.getAttribute("viewBox"))!.split(" ")[2]);
   expect(zoomed).toBeLessThan(Number(before!.split(" ")[2]));
   expect(await page.evaluate(() => window.visualViewport?.scale ?? 1)).toBe(1);

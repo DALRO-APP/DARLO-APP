@@ -11,18 +11,52 @@ const center = (points: Position[]): Position =>
 const distance = (points: Position[]) =>
   Math.hypot(points[1]![0] - points[0]![0], points[1]![1] - points[0]![1]);
 
+// 제스처 중에는 큰 SVG를 다시 그리지 않고 CSS transform으로만 움직인 뒤,
+// 손을 떼면(휠은 잠시 멈추면) 카메라를 한 번 확정한다.
 export function MapGestureSurface({
   children,
   camera,
   onChange,
 }: MapGestureSurfaceProps) {
   const element = useRef<HTMLDivElement>(null);
+  const layer = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Position>());
   const baseline = useRef<Snapshot | null>(null);
   const latest = useRef({ camera, onChange });
+  const view = useRef(camera);
+  const pending = useRef(false);
+  const wheelTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const paint = () => {
+    const target = layer.current;
+    const bounds = element.current?.getBoundingClientRect();
+    if (!target || !bounds) return;
+    const base = latest.current.camera;
+    const next = view.current;
+    if (!pending.current || next === base) {
+      target.style.transform = "";
+      return;
+    }
+    const scale = base.width / next.width;
+    const x = ((base.x - next.x) / next.width) * bounds.width;
+    const y = ((base.y - next.y) / next.height) * bounds.height;
+    target.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+  };
   useLayoutEffect(() => {
     latest.current = { camera, onChange };
+    if (!pending.current) view.current = camera;
+    paint();
   }, [camera, onChange]);
+  const preview = (next: Camera) => {
+    view.current = next;
+    pending.current = true;
+    paint();
+  };
+  const commit = () => {
+    clearTimeout(wheelTimer.current);
+    if (!pending.current) return;
+    pending.current = false;
+    latest.current.onChange(view.current);
+  };
   const point = (event: PointerEvent<HTMLDivElement>): Position => {
     const bounds = event.currentTarget.getBoundingClientRect();
     return [
@@ -32,7 +66,7 @@ export function MapGestureSurface({
   };
   const begin = () => {
     baseline.current = {
-      camera: latest.current.camera,
+      camera: view.current,
       points: [...pointers.current.values()].slice(0, 2),
     };
   };
@@ -55,9 +89,10 @@ export function MapGestureSurface({
       (current[0]![0] - start.points[0]![0]) * bounds.width,
       (current[0]![1] - start.points[0]![1]) * bounds.height,
     );
-    if (current.length < 2 && moved < 4) return;
+    if (current.length < 2 && moved < 4 && !pending.current) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    if (!event.currentTarget.hasPointerCapture(event.pointerId))
+      event.currentTarget.setPointerCapture(event.pointerId);
     const startPixels = start.points.map(
       ([x, y]) => [x * bounds.width, y * bounds.height] as Position,
     );
@@ -68,7 +103,7 @@ export function MapGestureSurface({
       current.length > 1
         ? distance(startPixels) / Math.max(1, distance(currentPixels))
         : 1;
-    latest.current.onChange(
+    preview(
       transformTerrain(
         start.camera,
         factor,
@@ -78,15 +113,20 @@ export function MapGestureSurface({
     );
   };
   const end = (event: PointerEvent<HTMLDivElement>) => {
-    pointers.current.delete(event.pointerId);
+    if (!pointers.current.delete(event.pointerId)) return;
     if (event.currentTarget.hasPointerCapture(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
     if (pointers.current.size) begin();
-    else baseline.current = null;
+    else {
+      baseline.current = null;
+      commit();
+    }
   };
   useEffect(() => {
     const target = element.current;
     if (!target) return;
+    // 지도 이동 중 화면 밖 도로·지형이 비어 보이지 않게 viewBox 바깥도 그린다.
+    target.querySelector("svg")?.style.setProperty("overflow", "visible");
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
       const bounds = target.getBoundingClientRect();
@@ -94,16 +134,22 @@ export function MapGestureSurface({
         (event.clientX - bounds.left) / bounds.width,
         (event.clientY - bounds.top) / bounds.height,
       ];
-      latest.current.onChange(
+      preview(
         transformTerrain(
-          latest.current.camera,
+          view.current,
           Math.exp(Math.max(-1, Math.min(1, event.deltaY * 0.002))),
           anchor,
         ),
       );
+      clearTimeout(wheelTimer.current);
+      wheelTimer.current = setTimeout(commit, 150);
     };
     target.addEventListener("wheel", wheel, { passive: false });
-    return () => target.removeEventListener("wheel", wheel);
+    return () => {
+      target.removeEventListener("wheel", wheel);
+      clearTimeout(wheelTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <div
@@ -113,16 +159,30 @@ export function MapGestureSurface({
       onPointerMove={move}
       onPointerUp={end}
       onPointerCancel={end}
-      onLostPointerCapture={end}
+      onLostPointerCapture={(event) => {
+        // 터치를 처음 받은 SVG 요소가 캡처를 넘겨줄 때도 버블링되므로 무시한다.
+        if (event.target === event.currentTarget) end(event);
+      }}
       style={{
         position: "absolute",
         inset: 0,
+        overflow: "hidden",
         touchAction: "none",
         overscrollBehavior: "contain",
         userSelect: "none",
       }}
     >
-      {children}
+      <div
+        ref={layer}
+        style={{
+          position: "absolute",
+          inset: 0,
+          transformOrigin: "0 0",
+          willChange: "transform",
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
