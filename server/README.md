@@ -27,6 +27,8 @@ python3.13 -m venv .venv
 
 휴대폰 Expo Go에서 접속하려면 `--host 0.0.0.0`으로 띄우고 앱 `.env.local`에 `EXPO_PUBLIC_API_URL=http://<맥 IP>:8000`을 지정한다.
 
+DB 손상으로 시작하지 못하면 **서버를 먼저 종료한 뒤** 위 임포트 명령을 실행한다. 임포터는 무결성을 검사하고, 손상된 DB와 WAL/SHM을 `data/corrupt-*/`에 함께 보관한다. 읽을 수 있는 코스·추천 기록은 새 DB에 복원하고 도로망은 원본 zip으로 다시 만든다. 손상 범위에 따라 일부 기록은 복원되지 않을 수 있다. 실행 중인 DB의 `-wal`·`-shm` 파일을 직접 삭제하지 않는다. 자세한 확인 결과는 [복구 기록](../docs/2026-10-28-SQLite-복구.md)을 참고한다.
+
 장소 검색에 카카오 로컬 API를 쓰려면 `server/.env.example`을 `server/.env.local`로 복사하고 `KAKAO_REST_API_KEY`를 채운 뒤 서버를 다시 띄운다. 키는 카카오 디벨로퍼스 › 내 애플리케이션 › 앱 키 › **REST API 키**다. 서버 전용 비밀값이라 앱의 `EXPO_PUBLIC_*`에 넣지 않는다. 키가 없으면 서울 도로명·공원·자치구 이름으로만 검색한다. 적용 여부는 `/health`의 `place_search`(`kakao`/`local`)로 확인한다.
 
 ## API

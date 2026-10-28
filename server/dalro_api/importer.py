@@ -19,6 +19,7 @@ import unicodedata
 import zipfile
 from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -532,15 +533,73 @@ SOURCES = [
 ]
 
 
+KEPT_TABLES = ("courses", "recommendation_logs")
+
+
+def set_aside_if_corrupt(engine) -> dict[str, list[tuple]] | None:
+    """SQLite 파일이 손상됐으면 data/corrupt-*/로 옮기고, 읽을 수 있는 코스·추천 기록을 돌려준다.
+
+    도로망 테이블은 원본 zip에서 다시 만들 수 있지만 저장한 코스는 상세 URL에 필요하다.
+    서버가 DB를 연 채 -wal/-shm 파일을 지우면 이렇게 손상될 수 있다."""
+    url = engine.url
+    if url.get_backend_name() != "sqlite" or not url.database or not Path(url.database).exists():
+        return None
+    path = Path(url.database)
+    con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    try:
+        healthy = con.execute("pragma quick_check").fetchone()[0] == "ok"
+    except sqlite3.DatabaseError:
+        healthy = False
+    if healthy:
+        con.close()
+        return None
+    salvaged: dict[str, list[tuple]] = {}
+    # 잘린 파일은 이 설정이 있어야 헤더보다 짧아도 남은 페이지를 읽는다(읽기 전용 연결).
+    con.execute("pragma writable_schema=on")
+    for table in KEPT_TABLES:
+        try:
+            cursor = con.execute(f"select * from {table}")
+            salvaged[table] = [tuple(d[0] for d in cursor.description), *cursor.fetchall()]
+        except sqlite3.DatabaseError:
+            salvaged[table] = []
+    con.close()
+    engine.dispose()
+    target = path.parent / f"corrupt-{datetime.now():%Y%m%d-%H%M%S}"
+    target.mkdir()
+    for suffix in ("", "-wal", "-shm"):
+        file = path.with_name(path.name + suffix)
+        if file.exists():
+            file.rename(target / file.name)
+    counts = {t: max(0, len(rows) - 1) for t, rows in salvaged.items()}
+    print(f"손상된 DB를 {target}로 옮겼어요. 살린 행: {counts}")
+    return salvaged
+
+
+def restore_rows(engine, salvaged: dict[str, list[tuple]]) -> None:
+    with engine.begin() as conn:
+        raw = conn.connection.driver_connection
+        for table, rows in salvaged.items():
+            if not rows:
+                continue
+            columns, *values = rows
+            raw.executemany(
+                f"insert or ignore into {table} ({', '.join(columns)}) values ({', '.join('?' * len(columns))})",
+                values,
+            )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--raw", type=Path, default=Path("data/raw"))
     parser.add_argument("--database-url", default=None)
     args = parser.parse_args()
     engine = make_engine(args.database_url)
+    salvaged = set_aside_if_corrupt(engine)
     # 도로망 파생 테이블은 스키마째 다시 만든다. 저장한 코스·추천 기록은 유지한다.
     Base.metadata.drop_all(engine, tables=[m.__table__ for m in NETWORK_TABLES])
     init_db(engine)
+    if salvaged:
+        restore_rows(engine, salvaged)
     with session_factory(engine)() as session:
         network = import_network(args.raw, session)
         q = network.quality
