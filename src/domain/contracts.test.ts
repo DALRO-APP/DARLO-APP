@@ -19,6 +19,41 @@ const request = recommendationRequestSchema.parse({
   distance_tolerance_ratio: 0.1,
 });
 describe("데이터 경계와 회귀 경로 계약", () => {
+  it("신호등 위치는 생략·미확인·측정된 0을 구분하고 실제 좌표와 개수를 검증한다", () => {
+    const course = makeMockCourse(request, "PACE");
+    expect(courseSchema.parse(course).signal_positions).toBeUndefined();
+    expect(
+      courseSchema.parse({ ...course, signal_positions: null })
+        .signal_positions,
+    ).toBeNull();
+    expect(
+      courseSchema.parse({
+        ...course,
+        summary: { ...course.summary, signal_count: 0 },
+        signal_positions: [],
+      }).signal_positions,
+    ).toEqual([]);
+    const positions = [STARTS[0]!.coordinate, STARTS[1]!.coordinate];
+    expect(
+      courseSchema.parse({ ...course, signal_positions: positions })
+        .signal_positions,
+    ).toEqual(positions);
+    expect(
+      courseSchema.safeParse({
+        ...course,
+        signal_positions: [
+          [200, 37],
+          [127, 37],
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      courseSchema.safeParse({
+        ...course,
+        signal_positions: [...positions, positions[0]],
+      }).success,
+    ).toBe(false);
+  });
   it.each(["PACE", "POWER", "NIGHT", "GREEN"] as const)(
     "%s 코스는 선택한 출발지로 돌아오며 목표 거리와 일치한다",
     (purpose) => {

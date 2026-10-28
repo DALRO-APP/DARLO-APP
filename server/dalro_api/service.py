@@ -1,10 +1,12 @@
 import time
 import uuid
+import shapely
 
 from sqlalchemy.orm import Session, sessionmaker
 
 from .config import SNAP_RADIUS_M
-from .courses import build_course, place_label
+from .courses import build_course, place_label, signal_positions
+from .geo import to_xy
 from .graph import Overlay, RoadGraph
 from .models import RecommendationLog, StoredCourse
 from .routing import loop_candidates, straight_candidates
@@ -95,4 +97,11 @@ class RecommendationService:
     def get_course(self, course_id: str) -> dict | None:
         with self.sessions() as session:
             stored = session.get(StoredCourse, course_id)
-            return None if stored is None else stored.payload
+            if stored is None:
+                return None
+            course = dict(stored.payload)
+            # 이전 저장 코스도 같은 도로망 버전이면 위치 정보를 덧붙여 응답한다.
+            if course["data_version"] == self.graph.version:
+                route = shapely.LineString(to_xy(course["geometry"]["coordinates"]))
+                course["signal_positions"] = signal_positions(self.graph, route)
+            return course

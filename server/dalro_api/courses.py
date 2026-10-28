@@ -6,7 +6,7 @@ import numpy as np
 import shapely
 
 from .config import BASE_PACE_S_PER_KM, FACILITY_BUFFER_M
-from .geo import Position, haversine
+from .geo import Position, haversine, to_lonlat, to_xy
 from .graph import Overlay
 from .routing import Candidate
 
@@ -76,6 +76,19 @@ def _count(overlay: Overlay, kind: str, buffer) -> int | None:
     if tree is None:
         return None
     return int(len(np.unique(tree.query(buffer, predicate="intersects"))))
+
+
+def signal_positions(graph, route) -> list[list[float]] | None:
+    """경로 선과 실제로 교차하는 신호 부착대의 교차점(EPSG:4326).
+
+    주변 버퍼·스냅 없이 원본과의 교차점만 쓴다. 실시간 신호 상태가 아니다.
+    """
+    tree = graph.facilities.get("signal")
+    if tree is None:
+        return None
+    indices = np.unique(tree.query(route, predicate="intersects"))
+    points = [tuple(route.intersection(tree.geometries[i]).representative_point().coords[0]) for i in indices]
+    return [list(p) for p in to_lonlat(points)]
 
 
 def build_course(
@@ -216,6 +229,7 @@ def build_course(
         "reasons": reasons,
         "segments": segments,
         "edge_ids": edge_ids,
+        "signal_positions": signal_positions(graph, shapely.LineString(to_xy(lonlat))),
         "data_version": graph.version,
         "algorithm_version": ALGORITHM_VERSION,
         "is_mock": False,

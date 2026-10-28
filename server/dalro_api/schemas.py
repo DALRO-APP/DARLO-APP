@@ -89,6 +89,7 @@ class Course(BaseModel):
     reasons: list[Reason]
     segments: list[Segment] = Field(min_length=2)
     edge_ids: list[str]
+    signal_positions: list[Position] | None = None
     data_version: str
     algorithm_version: str
     is_mock: bool

@@ -88,11 +88,23 @@ export const courseSchema = z
       )
       .min(2),
     edge_ids: z.array(z.string()),
+    // 경로 선이 실제 교차하는 신호 부착대의 교차점. 주변 시설 수와는 구분한다.
+    signal_positions: z.array(positionSchema).nullable().optional(),
     data_version: z.string(),
     algorithm_version: z.string(),
     is_mock: z.boolean(),
   })
   .superRefine((course, ctx) => {
+    if (
+      course.signal_positions &&
+      course.summary.signal_count !== null &&
+      course.signal_positions.length > course.summary.signal_count
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["signal_positions"],
+        message: "통과 신호등 위치 수가 코스 주변의 신호등 수보다 많습니다.",
+      });
     const start = course.geometry.coordinates[0]!;
     const end = course.geometry.coordinates.at(-1)!;
     if (course.route_type === "loop" && haversine(start, end) > 20)
