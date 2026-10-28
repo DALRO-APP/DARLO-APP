@@ -5,6 +5,7 @@
 """
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 import httpx
 from fastapi import Body, FastAPI, HTTPException, Query
@@ -22,10 +23,17 @@ def create_app(
     database_url: str | None = None,
     kakao_key: str | None = None,
     http_client: httpx.Client | None = None,
+    seed_path: Path | None = None,
 ) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        engine = make_engine(database_url)
+        # Vercel은 불변 공간자료에서 새 임시 DB를 만든다. 로컬 실행은 기존 DB를 쓴다.
+        if seed_path is not None:
+            from .demo_seed import restore_seed
+            temporary_db = restore_seed(seed_path)
+            engine = make_engine(f"sqlite:///{temporary_db}")
+        else:
+            engine = make_engine(database_url)
         init_db(engine)
         sessions = session_factory(engine)
         try:
@@ -67,6 +75,7 @@ def create_app(
             "nodes": len(graph.nodes_xy),
             "purposes": ["PACE"],
             "place_search": "kakao" if app.state.places.kakao_key else "local",
+            "storage": "temporary-demo" if seed_path is not None else "local-sqlite",
             "network_stats": graph.stats,
         }
 

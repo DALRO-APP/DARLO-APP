@@ -1,5 +1,6 @@
 node_modules/
 .expo/
+.vercel/
 dist/
 web-build/
 /ios/
@@ -23,3 +24,4 @@ expo-env.d.ts
 .gradle/
 .kotlin/
 modules/dalro-kakao-map/android/build/
+.vercel

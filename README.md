@@ -4,6 +4,8 @@
 
 Expo SDK 57 · React Native · TypeScript · Expo Router · Zustand · TanStack Query
 
+Vercel 시연 배포는 프론트와 FastAPI를 한 프로젝트에서 실행합니다. 고정 도로망·경사·시설은 배포 자료에서 매번 복원하고, 추천 코스·서버 로그는 임시 SQLite에 저장합니다. [Vercel + SQLite 시연 배포](docs/2026-10-28-Vercel-SQLite-시연배포.md)를 참고하세요.
+
 ```sh
 npm ci
 npm run web     # 브라우저에서 바로 시연

@@ -14,6 +14,7 @@ DALRO는 도시 공간정보를 이용한 개인 맞춤 러닝 코스 추천 앱
 - `.env` 비밀값을 출력하지 않는다. `EXPO_PUBLIC_*`는 공개 앱 번들에 포함되므로 토큰·DB 비밀번호를 넣지 않는다.
 - 의존성은 SDK 57의 `node_modules/expo/bundledNativeModules.json`과 `npx expo install --check`로 맞춘다. lockfile도 함께 관리한다.
 - 조회되지 않은 자료를 확인했다고 보고하지 않는다. 노션 '데이터 저장소'는 Notion MCP로 조회·첨부 다운로드할 수 있다(2026-10-27). 확인한 첨부와 사실은 `docs/2026-10-27-pace-실데이터-서버.md`에 있다. 원본 zip·SQLite는 `server/data/`에 두고 커밋하지 않는다.
+- Vercel 시연은 `server/seed/yongsan-network.sql.gz`의 고정 공간자료만 임시 SQLite로 복원한다. 파생 배포 자료는 커밋하며 원본·환경 파일·생성 코스·추천 로그는 포함하지 않는다. 서버 생성 코스/로그의 영속성은 시연에서 요구하지 않는다. 이미 추천받은 코스의 상세 흐름은 repository의 검증된 기기 캐시(최근 24개)로 유지한다.
 
 ## 구조와 탐색
 

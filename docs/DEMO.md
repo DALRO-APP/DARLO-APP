@@ -46,7 +46,7 @@ node scripts/serve-demo.mjs
 
 ## Vercel 시연 배포
 
-루트의 `vercel.json`은 더미 데이터로 웹 빌드하고 `dist/`를 배포합니다. 상세 URL 직접 진입과 새로고침은 SPA rewrite로 처리합니다. [Expo 공식 Vercel 배포 가이드](https://docs.expo.dev/guides/publishing-websites/#vercel)를 따릅니다.
+루트의 `vercel.json`은 PACE 실서버를 같은 배포의 `/api`에 연결하는 hybrid 웹 빌드를 만듭니다. Python Function은 고정 공간자료에서 임시 SQLite를 복원하며, 세부 실행·자료 갱신은 [Vercel + SQLite 시연 배포](2026-10-28-Vercel-SQLite-시연배포.md)를 참고하세요. 상세 URL 직접 진입과 새로고침은 SPA rewrite로 처리합니다. [Expo 공식 Vercel 배포 가이드](https://docs.expo.dev/guides/publishing-websites/#vercel)를 따릅니다.
 
 - Vercel에서 저장소를 가져오고 Framework Preset은 `Other`, Root Directory는 저장소 루트(`./`)로 둡니다. 설치·빌드 명령과 출력 폴더는 `vercel.json`에 지정되어 있습니다.
 - 현재 `package.json`의 Node.js 범위는 `>=22.14.0`이므로 Vercel에서는 기본 `24.x`를 사용할 수 있습니다. 로컬 웹 검증은 `22.14.0`에서 했습니다. `22.x`로 고정하려면 `package.json`의 engines 범위도 함께 변경해야 합니다. [Vercel Node.js 버전 규칙](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions)을 참고하세요.

@@ -1,0 +1,7 @@
+# Vercel Python Function runtime. 로컬 개발·테스트는 server/requirements.txt.
+fastapi>=0.115,<1
+uvicorn>=0.32,<1
+sqlalchemy>=2.0,<3
+shapely>=2.0,<3
+pyproj>=3.6,<4
+httpx>=0.27,<1

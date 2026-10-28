@@ -7,6 +7,12 @@ import {
 import { STARTS } from "../domain/catalog";
 import { recommendationRequestSchema } from "../domain/contracts";
 import { makeMockCourse } from "../data/mock";
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => {}),
+  },
+}));
 const request = recommendationRequestSchema.parse({
   schema_version: "1.0",
   start: STARTS[0]!.coordinate,
@@ -247,17 +253,15 @@ describe("Straight 저장소 교체", () => {
   });
   it("HTTP에 목적지와 자동 거리를 보내고 올바른 응답을 받는다", async () => {
     const course = makeMockCourse(straight, "NIGHT");
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            schema_version: "1.0",
-            request_id: "straight",
-            courses: [course],
-          }),
-        ),
-      );
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          schema_version: "1.0",
+          request_id: "straight",
+          courses: [course],
+        }),
+      ),
+    );
     vi.stubGlobal("fetch", fetcher);
     expect(
       (
@@ -283,17 +287,15 @@ describe("Straight 저장소 교체", () => {
     ]) {
       vi.stubGlobal(
         "fetch",
-        vi
-          .fn()
-          .mockResolvedValue(
-            new Response(
-              JSON.stringify({
-                schema_version: "1.0",
-                request_id: "wrong",
-                courses: [course],
-              }),
-            ),
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              schema_version: "1.0",
+              request_id: "wrong",
+              courses: [course],
+            }),
           ),
+        ),
       );
       await expect(
         new HttpCourseRepository("https://api.example.com").recommend(straight),

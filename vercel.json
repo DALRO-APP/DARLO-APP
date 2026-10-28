@@ -2,8 +2,20 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "npm ci",
-  "buildCommand": "EXPO_PUBLIC_DATA_SOURCE=mock npm run export:web",
+  "buildCommand": "node scripts/build-vercel.mjs",
   "outputDirectory": "dist",
   "cleanUrls": true,
-  "rewrites": [{ "source": "/:path*", "destination": "/" }]
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{app/**,src/**,assets/**,modules/**,scripts/**,examples/**,tests/**,docs/**,pdf/**,server/data/**,server/tests/**,server/.venv/**}"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index?__dalro_path=:path*"
+    },
+    { "source": "/:path*", "destination": "/" }
+  ]
 }

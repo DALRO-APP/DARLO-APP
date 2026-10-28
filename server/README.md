@@ -2,6 +2,8 @@
 
 FastAPI · SQLAlchemy 2 · SQLite. 노션 '데이터 저장소'의 팀 전처리 자료로 PACE 목적의 Loop/Straight 코스를 추천한다. 앱 계약은 [src/domain/contracts.ts](../src/domain/contracts.ts)와 [docs/TEAM-DATA-HANDOFF.md](../docs/TEAM-DATA-HANDOFF.md)를 따른다. POWER·NIGHT·GREEN은 아직 구현하지 않았고 `501`을 반환한다.
 
+Vercel에서는 외부 DB 없이 고정 배포 자료를 임시 SQLite로 복원한다. 도로망·경사·시설은 유지되며 생성 코스·로그는 인스턴스 교체 시 초기화될 수 있다. 상세 흐름은 앱의 최근 24개 서버 코스 캐시로 이어간다. [시연 배포 안내](../docs/2026-10-28-Vercel-SQLite-시연배포.md)를 참고한다. 아래 로컬 실행은 기존 영속 DB 방식이다.
+
 ## 준비
 
 ```sh

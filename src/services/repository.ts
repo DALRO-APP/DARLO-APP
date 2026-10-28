@@ -12,6 +12,7 @@ import {
 } from "../domain/contracts";
 import { MOCK_PLACE_ID, makeMockCourse, parsePlaceId } from "../data/mock";
 import { searchDemoPlaces } from "../data/places";
+import { CourseCache } from "./course-cache";
 
 export interface CourseRepository {
   recommend(
@@ -100,7 +101,13 @@ export class MockCourseRepository implements CourseRepository {
 }
 
 export class HttpCourseRepository implements CourseRepository {
-  constructor(private readonly baseUrl: string) {}
+  private readonly cache: CourseCache;
+  constructor(
+    private readonly baseUrl: string,
+    cache?: CourseCache,
+  ) {
+    this.cache = cache ?? new CourseCache(baseUrl.replace(/\/$/, ""));
+  }
   private async request(
     path: string,
     init: RequestInit = {},
@@ -144,7 +151,7 @@ export class HttpCourseRepository implements CourseRepository {
   }
   async recommend(request: RecommendationRequest, signal?: AbortSignal) {
     const valid = recommendationRequestSchema.parse(request);
-    return parseRecommendations(
+    const response = parseRecommendations(
       await this.request("/v1/courses/recommendations", {
         method: "POST",
         body: JSON.stringify(valid),
@@ -152,11 +159,17 @@ export class HttpCourseRepository implements CourseRepository {
       }),
       valid,
     );
+    await this.cache.remember(response.courses);
+    return response;
   }
   async getCourse(id: string, signal?: AbortSignal) {
-    return courseSchema.parse(
+    const cached = await this.cache.get(id);
+    if (cached) return cached;
+    const course = courseSchema.parse(
       await this.request(`/v1/courses/${encodeURIComponent(id)}`, { signal }),
     );
+    await this.cache.remember([course]);
+    return course;
   }
   async searchPlaces(query: string, signal?: AbortSignal) {
     return placeSearchResponseSchema.parse(
