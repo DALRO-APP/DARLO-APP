@@ -111,12 +111,14 @@ Straight 요청은 `route_type: "straight"`, `end: [경도, 위도]`, `target_di
 | 기본         | id, name, subtitle, purpose, region, start_label                                                                                             |
 | 방식/목적지  | route_type=loop/straight. 기존 응답의 누락은 loop로 호환. Straight는 end=[lon,lat], end_label 필수                                           |
 | geometry     | LineString, [lon,lat] 최소 4점. 실제 도로 순서대로 이어진 경로                                                                               |
-| summary      | distance_m, estimated_duration_s, elevation_gain_m, avg_slope_pct, signal_count, crossing_count, light_count, green_ratio, environment_score |
-| summary 결측 | 거리/시간 필수 양수. 나머지는 null 가능. environment_score는 0~100 환경 지표이며 안전 보장 아님                                              |
+| summary      | distance_m, estimated_duration_s, elevation_gain_m, avg_slope_pct, signal_count, crossing_count, light_count, green_ratio, environment_penalty |
+| summary 결측 | 거리/시간 필수 양수. 나머지는 null 가능. environment_penalty는 0~1 길이 가중 평균 환경 패널티(낮을수록 좋음), 안전 보장 아님 |
 | reasons      | code, title, description. code=flat/hill/lighting/green/signals/loop/destination                                                             |
 | segments     | id, name, description, distance_from_start_m. 시작·주요 구간·도착 누적 거리 오름차순                                                         |
 | edge_ids     | 실제 방문 순서. 왕복/반복 ID 허용, 서버가 방향을 추적                                                                                        |
 | 출처         | data_version, algorithm_version, is_mock                                                                                                     |
+
+2026-11-17: 새 응답은 `environment_score` 대신 `environment_penalty`를 보냅니다. 패널티는 서버에서 반올림하지 않습니다. 이전 서버·기기 캐시에 새 필드가 없으면 앱과 서버의 읽기 경계에서 `null`로 받아 기존 경로를 유지합니다. 옛 정수 점수로 패널티를 역산하지 않습니다. [변경 배경·추가 실험](2026-11-17-발표피드백-패널티-경로실험.md)을 참고하세요.
 
 Loop 거리 오차는 입력 ±10%를 초기 제안으로 둡니다. Straight는 자동 거리이므로 목표 거리 허용오차 검사를 하지 않습니다. geometry 길이와 summary도 일치해야 합니다. 검사기의 15% 길이 임계값은 잘못된 파일을 찾는 임시 허용치이며 실제 목표 품질은 2% 이내입니다. Loop는 출발/도착 20m 이내 회귀를 검사합니다. Straight는 경로 끝점이 응답 end의 20m 이내이며 출발/끝점은 50m 이상 떨어져야 합니다. 모든 추천은 요청 위치에서 50m 이내 출발, Straight는 요청 목적지에서 50m 이내 도착을 검사합니다.
 

@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native";
 import { RouteMap } from "../src/components/RouteMap";
+import { EnvironmentPenalty } from "../src/components/EnvironmentPenalty";
 import { DemoNote, FlowHeader } from "../src/components/Flow";
 import { Button, Chip, Screen, Status, T, useWide } from "../src/components/ui";
 import { useRecommendations } from "../src/services/queries";
@@ -184,10 +185,9 @@ export default function Recommendations() {
                       ? "신호 미확인"
                       : `${course.is_mock ? "신호" : "신호 부착대"} ${course.summary.signal_count}개`}
                   </T>
-                  <T accent style={{ fontSize: 14, fontWeight: "700" }}>
-                    {course.purpose} 환경 점수{" "}
-                    {course.summary.environment_score ?? "미확인"}
-                  </T>
+                  <EnvironmentPenalty
+                    value={course.summary.environment_penalty}
+                  />
                   <T muted style={{ fontSize: 13, lineHeight: 21 }}>
                     {courseExplanation(course)}
                   </T>

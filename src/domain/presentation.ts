@@ -5,6 +5,13 @@ import {
 } from "./contracts";
 import { STARTS } from "./catalog";
 
+export function formatEnvironmentPenalty(
+  value: number | null | undefined,
+): string {
+  // 이전에 저장한 모의 기록은 새 필드가 없어도 결과 화면을 열 수 있다.
+  return value == null ? "미확인" : value.toFixed(3);
+}
+
 // 조건에 저장한 장소 이름. 이전 버전 저장값처럼 이름이 없으면 시연 장소 좌표로 찾는다.
 export function placeLabel(
   request: RecommendationRequest,

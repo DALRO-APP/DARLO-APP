@@ -26,7 +26,7 @@ def normalize_stop_density(densities: list[float], cap: float = STOP_DENSITY_CAP
 
 
 def penalty(stop_norm: float, slope_norm: float | None) -> float:
-    """0~1 환경 악화 점수. 경사 미측정 구간은 경사 항을 0으로 두지 않고 최대값으로 본다."""
+    """0~1 환경 패널티(낮을수록 좋음). 경사 미측정 구간은 최대값으로 본다."""
     slope = 1.0 if slope_norm is None else slope_norm
     return PACE_STOP_WEIGHT * stop_norm + PACE_SLOPE_WEIGHT * slope
 

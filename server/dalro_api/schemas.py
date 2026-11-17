@@ -71,7 +71,8 @@ class Summary(BaseModel):
     crossing_count: int | None = Field(ge=0)
     light_count: int | None = Field(ge=0)
     green_ratio: float | None = Field(ge=0, le=1)
-    environment_score: float | None = Field(ge=0, le=100)
+    # 구버전 저장 코스에는 이 값이 없다. 반올림된 환경 점수에서 역산하지 않는다.
+    environment_penalty: float | None = Field(default=None, ge=0, le=1)
 
 
 class Course(BaseModel):

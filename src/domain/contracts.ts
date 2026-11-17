@@ -60,7 +60,9 @@ export const courseSchema = z
       crossing_count: z.number().int().nonnegative().nullable(),
       light_count: z.number().int().nonnegative().nullable(),
       green_ratio: z.number().min(0).max(1).nullable(),
-      environment_score: z.number().min(0).max(100).nullable(),
+      // 길이 가중 평균 환경 패널티(0~1, 낮을수록 좋음).
+      // 구버전 코스·캐시는 점수를 역산하지 않고 미확인으로 보존한다.
+      environment_penalty: z.number().min(0).max(1).nullable().default(null),
     }),
     reasons: z.array(
       z.object({

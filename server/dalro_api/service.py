@@ -104,4 +104,7 @@ class RecommendationService:
             if course["data_version"] == self.graph.version:
                 route = shapely.LineString(to_xy(course["geometry"]["coordinates"]))
                 course["signal_positions"] = signal_positions(self.graph, route)
-            return course
+            parsed = Course.model_validate(course)
+            return parsed.model_dump(mode="json", exclude_unset=True) | {
+                "summary": parsed.summary.model_dump(mode="json")
+            }

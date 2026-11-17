@@ -19,6 +19,32 @@ const request = recommendationRequestSchema.parse({
   distance_tolerance_ratio: 0.1,
 });
 describe("데이터 경계와 회귀 경로 계약", () => {
+  it("환경 패널티의 0·1·미측정과 구버전 점수를 구분한다", () => {
+    const course = makeMockCourse(request, "PACE");
+    for (const value of [0, 1, 0.047123, null]) {
+      expect(
+        courseSchema.parse({
+          ...course,
+          summary: { ...course.summary, environment_penalty: value },
+        }).summary.environment_penalty,
+      ).toBe(value);
+    }
+    for (const value of [-0.01, 1.01, 95]) {
+      expect(
+        courseSchema.safeParse({
+          ...course,
+          summary: { ...course.summary, environment_penalty: value },
+        }).success,
+      ).toBe(false);
+    }
+    const { environment_penalty: _, ...legacySummary } = course.summary;
+    const legacy = courseSchema.parse({
+      ...course,
+      summary: { ...legacySummary, environment_score: 95 },
+    });
+    expect(legacy.summary.environment_penalty).toBeNull();
+    expect(legacy.summary).not.toHaveProperty("environment_score");
+  });
   it("신호등 위치는 생략·미확인·측정된 0을 구분하고 실제 좌표와 개수를 검증한다", () => {
     const course = makeMockCourse(request, "PACE");
     expect(courseSchema.parse(course).signal_positions).toBeUndefined();

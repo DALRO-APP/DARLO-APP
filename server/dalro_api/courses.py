@@ -250,7 +250,7 @@ def build_course(
             "light_count": lights,
             # park_cnt는 공원 피처 수이며 녹지 면적 비율이 아니다.
             "green_ratio": None,
-            "environment_score": round(max(0.0, min(1.0, 1 - penalty)) * 100),
+            "environment_penalty": max(0.0, min(1.0, penalty)),
         },
         "reasons": reasons,
         "segments": segments,

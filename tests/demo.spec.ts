@@ -83,7 +83,9 @@ test("목적 → 조건 → 추천 → 준비 → 모의 러닝 → 결과 저�
   await page.getByRole("button", { name: "러닝 종료", exact: true }).click();
   await expect(page.getByText("3.00 km", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("PACE 환경 점수 91점", { exact: true }),
+    page
+      .getByTestId("course-report")
+      .getByText("환경 패널티 0.090", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
     path: `test-results/${test.info().project.name}-result.png`,
@@ -344,7 +346,9 @@ test("Straight 방식 → 출발·목적지 선택과 교환 → 추천 → 완�
   await page.getByRole("button", { name: "완주 시연", exact: true }).click();
   await page.getByRole("button", { name: "러닝 종료", exact: true }).click();
   await expect(
-    page.getByText("PACE 환경 점수 88점", { exact: true }),
+    page
+      .getByTestId("course-report")
+      .getByText("환경 패널티 0.120", { exact: true }),
   ).toBeVisible();
   await expect(
     page

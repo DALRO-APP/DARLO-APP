@@ -15,7 +15,7 @@ const descriptions: Record<
     name: string;
     subtitle: string;
     gain: number;
-    score: number;
+    penalty: number;
     slope: number;
     signals: number;
     lights: number;
@@ -26,7 +26,7 @@ const descriptions: Record<
     name: "한강 리듬 코스",
     subtitle: "강바람과 함께, 끊김 없이 달려요.",
     gain: 12,
-    score: 91,
+    penalty: 0.09,
     slope: 0.7,
     signals: 2,
     lights: 38,
@@ -36,7 +36,7 @@ const descriptions: Record<
     name: "남산 챌린지 코스",
     subtitle: "조금 더 높이, 어제보다 단단하게.",
     gain: 108,
-    score: 78,
+    penalty: 0.22,
     slope: 5.2,
     signals: 4,
     lights: 24,
@@ -46,7 +46,7 @@ const descriptions: Record<
     name: "빛을 따라 달로",
     subtitle: "밝은 산책로를 따라 즐기는 저녁 러닝.",
     gain: 24,
-    score: 94,
+    penalty: 0.06,
     slope: 1.2,
     signals: 3,
     lights: 62,
@@ -56,7 +56,7 @@ const descriptions: Record<
     name: "초록 쉼표 코스",
     subtitle: "나무 그늘과 한강 사이에서 숨을 고르세요.",
     gain: 28,
-    score: 87,
+    penalty: 0.13,
     slope: 1.4,
     signals: 3,
     lights: 31,
@@ -239,7 +239,7 @@ export function makeMockCourse(
       crossing_count: d.signals + 1,
       light_count: d.lights,
       green_ratio: d.green,
-      environment_score: Math.max(0, d.score - rank * 3),
+      environment_penalty: Math.min(1, d.penalty + rank * 0.03),
     },
     reasons: [
       purpose === "POWER"

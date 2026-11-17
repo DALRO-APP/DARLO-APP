@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from . import pace
-from .config import FACILITY_BUFFER_M, PACE_EXCLUDED_FCLASS, SNAP_RADIUS_M
+from .config import FACILITY_BUFFER_M, PACE_ALPHA, PACE_EXCLUDED_FCLASS, SNAP_RADIUS_M
 from .geo import Position, slope_pct, to_lonlat, to_xy
 from .models import Facility, NetworkVersion, Place, RoadEdge, ServiceArea
 
@@ -310,9 +310,14 @@ class Overlay:
         source: int,
         target: int | None,
         weights: dict[int, float] | None = None,
+        *,
+        alpha: float = PACE_ALPHA,
     ) -> tuple[dict[int, float], dict[int, tuple[int, int]]]:
         """PACE 비용 기준 A*(target 지정) 또는 Dijkstra(target=None).
-        weights는 이미 쓴 구간에 곱할 배율로, 같은 길 반복을 줄인다."""
+        weights는 이미 쓴 구간에 곱할 배율로, 같은 길 반복을 줄인다.
+        alpha는 재현 실험용이며 앱 요청에서는 기본값 3을 사용한다."""
+        if not math.isfinite(alpha) or alpha < 0:
+            raise ValueError("alpha는 유한한 0 이상의 값이어야 합니다.")
         weights = weights or {}
         goal = self.xy(target) if target is not None else None
         dist = {source: 0.0}
@@ -329,7 +334,8 @@ class Overlay:
             for m, e in self.neighbors(n):
                 if m in done:
                     continue
-                nd = d + self.edge(e).cost * weights.get(e, 1.0)
+                edge = self.edge(e)
+                nd = d + pace.cost(edge.length, edge.penalty, alpha) * weights.get(e, 1.0)
                 if nd < dist.get(m, math.inf):
                     dist[m] = nd
                     parent[m] = (n, e)

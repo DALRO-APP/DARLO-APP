@@ -32,19 +32,30 @@ function storage() {
   };
 }
 describe("일시적인 서버 저장과 독립적인 코스 상세", () => {
+  it("구버전 캐시의 경로는 유지하고 반올림된 점수를 패널티로 역산하지 않는다", async () => {
+    const disk = storage();
+    const { environment_penalty: _, ...summary } = realCourse.summary;
+    await disk.setItem(
+      "dalro-server-courses-v1:legacy",
+      JSON.stringify([
+        { ...realCourse, summary: { ...summary, environment_score: 95 } },
+      ]),
+    );
+    const course = await new CourseCache("legacy", disk).get(realCourse.id);
+    expect(course?.geometry).toEqual(realCourse.geometry);
+    expect(course?.summary.environment_penalty).toBeNull();
+  });
   it("추천받은 서버 코스는 저장소 인스턴스를 새로 만들어도 HTTP 요청 없이 복원한다", async () => {
     const disk = storage();
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            schema_version: "1.0",
-            request_id: "demo",
-            courses: [realCourse],
-          }),
-        ),
-      );
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          schema_version: "1.0",
+          request_id: "demo",
+          courses: [realCourse],
+        }),
+      ),
+    );
     vi.stubGlobal("fetch", fetcher);
     try {
       await new HttpCourseRepository(

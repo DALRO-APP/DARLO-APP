@@ -16,6 +16,8 @@ test-results/
 playwright-report/
 # 발표용 로컬 PNG·ZIP 전달 산출물
 /artifacts/DALRO-발표-투명요소/
+/artifacts/DALRO-발표-초록테마/
+/artifacts/DALRO-feedback-2026-11-17/
 *.log
 
 # @generated expo-cli sync-2b81b286409207a5da26e14c78851eb30d8ccbdb

@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from conftest import BUSY_ROW, ORIGIN, loop_request
@@ -22,8 +23,32 @@ def test_loop_courses_follow_app_contract(client):
         assert course["summary"]["elevation_gain_m"] is None and course["summary"]["green_ratio"] is None
         assert course["is_mock"] is False and course["edge_ids"]
         assert course["data_version"] == "test-grid-v1"
+        assert 0 <= course["summary"]["environment_penalty"] <= 1
+        assert "environment_score" not in course["summary"]
         distances = [s["distance_from_start_m"] for s in course["segments"]]
         assert distances == sorted(distances) and distances[-1] == course["summary"]["distance_m"]
+
+
+def test_penalty_is_unrounded_length_weighted_mean(client):
+    from dalro_api.graph import Overlay
+    from dalro_api.routing import loop_candidates
+    graph = client.app.state.service.graph
+    overlay = Overlay(graph)
+    start = graph.snap(ORIGIN, overlay)
+    candidate = loop_candidates(overlay, start.node, 3000, 0.1)[0]
+    expected = sum(overlay.edge(e).penalty * overlay.edge(e).length for e, _ in candidate.steps) / candidate.length
+    course = client.post("/v1/courses/recommendations", json=loop_request()).json()["courses"][0]
+    assert course["summary"]["environment_penalty"] == pytest.approx(expected)
+
+
+def test_legacy_summary_does_not_invert_rounded_score():
+    from dalro_api.schemas import Summary
+    legacy = dict(distance_m=1000, estimated_duration_s=372, elevation_gain_m=None,
+                  avg_slope_pct=None, signal_count=0, crossing_count=0, light_count=None,
+                  green_ratio=None, environment_score=95)
+    summary = Summary.model_validate(legacy).model_dump()
+    assert summary["environment_penalty"] is None
+    assert "environment_score" not in summary
 
 
 def test_pace_avoids_stop_heavy_road(client):

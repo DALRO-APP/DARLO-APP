@@ -30,7 +30,7 @@ class Candidate:
     error: float
 
     @property
-    def score(self) -> float:
+    def selection_cost(self) -> float:
         # 팀 비용(길이당 C(e))에 반복 구간·거리 오차를 더한 정렬 기준
         return self.cost / self.length + OVERLAP_WEIGHT * self.overlap + DISTANCE_WEIGHT * abs(self.error)
 
@@ -71,7 +71,7 @@ def similarity(overlay: Overlay, a: Candidate, b: Candidate) -> float:
 
 def pick(overlay: Overlay, candidates: list[Candidate], count: int) -> list[Candidate]:
     chosen: list[Candidate] = []
-    for candidate in sorted(candidates, key=lambda c: c.score):
+    for candidate in sorted(candidates, key=lambda c: c.selection_cost):
         if all(similarity(overlay, candidate, other) <= MAX_SIMILARITY for other in chosen):
             chosen.append(candidate)
         if len(chosen) == count:

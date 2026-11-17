@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { RouteMap } from "../../src/components/RouteMap";
+import { EnvironmentPenalty } from "../../src/components/EnvironmentPenalty";
 import { DemoNote, FlowHeader, Metric } from "../../src/components/Flow";
 import {
   Button,
@@ -85,6 +86,7 @@ export default function CourseDetail() {
             />
           </View>
           <View style={{ gap: 8 }}>
+            <EnvironmentPenalty value={course.summary.environment_penalty} />
             <T style={{ fontSize: 14 }}>
               {course.start_label} →{" "}
               {course.route_type === "straight" ? course.end_label : "출발지"}

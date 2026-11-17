@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { RouteMap } from "../src/components/RouteMap";
+import { EnvironmentPenalty } from "../src/components/EnvironmentPenalty";
 import { DemoNote, FlowHeader, Metric } from "../src/components/Flow";
 import { Button, Panel, Screen, Status, T } from "../src/components/ui";
 import {
@@ -81,14 +82,9 @@ export default function Result() {
         {course.start_label} →{" "}
         {course.route_type === "straight" ? course.end_label : "출발지"}
       </T>
-      <Panel style={{ padding: 22, gap: 12 }}>
+      <Panel testID="course-report" style={{ padding: 22, gap: 12 }}>
         <T style={{ fontSize: 15, fontWeight: "700" }}>코스 리포트</T>
-        <T accent style={{ fontSize: 25, fontWeight: "800" }}>
-          {course.purpose} 환경 점수{" "}
-          {course.summary.environment_score === null
-            ? "미확인"
-            : `${course.summary.environment_score}점`}
-        </T>
+        <EnvironmentPenalty value={course.summary.environment_penalty} />
         <T muted style={{ fontSize: 13, lineHeight: 21 }}>
           {courseExplanation(course)}
         </T>

@@ -72,7 +72,7 @@
         "crossing_count": 3,
         "light_count": 38,
         "green_ratio": 0.53,
-        "environment_score": 91
+        "environment_penalty": 0.09
       },
       "reasons": [
         {
@@ -203,7 +203,7 @@
         "crossing_count": 3,
         "light_count": 38,
         "green_ratio": 0.53,
-        "environment_score": 88
+        "environment_penalty": 0.12
       },
       "reasons": [
         {
@@ -334,7 +334,7 @@
         "crossing_count": 3,
         "light_count": 38,
         "green_ratio": 0.53,
-        "environment_score": 85
+        "environment_penalty": 0.15
       },
       "reasons": [
         {

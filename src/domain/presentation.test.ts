@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { parseDistanceKm, courseExplanation, placeLabel } from "./presentation";
+import {
+  parseDistanceKm,
+  courseExplanation,
+  placeLabel,
+  formatEnvironmentPenalty,
+} from "./presentation";
 import { makeMockCourse } from "../data/mock";
 import { STARTS } from "./catalog";
 describe("직접 입력 거리", () => {
+  it("패널티를 반전하지 않고 표시하며 0과 미확인을 구분한다", () => {
+    expect(formatEnvironmentPenalty(0)).toBe("0.000");
+    expect(formatEnvironmentPenalty(0.047123)).toBe("0.047");
+    expect(formatEnvironmentPenalty(1)).toBe("1.000");
+    expect(formatEnvironmentPenalty(null)).toBe("미확인");
+    expect(formatEnvironmentPenalty(undefined)).toBe("미확인");
+  });
   it.each([
     ["1", 1000],
     ["20", 20000],
