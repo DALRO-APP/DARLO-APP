@@ -1,0 +1,183 @@
+{
+  "review_id": "qc-20261118-v1",
+  "base_network_version": "yongsan-verified-988cb48a",
+  "effective_network_version": "yongsan-verified-988cb48a-qc-20261118-v1",
+  "date": "2026-11-18",
+  "source_gpkg_sha256": "988cb48aa0f67d9d70eed7701623199cc351c9f8ecfb969e346c5529fba47697",
+  "evidence": {
+    "notion": "https://app.notion.com/p/3e78ae567af28033b190ea17aae5409b",
+    "missing20_xlsx_sha256": "64d1a8bad3c7e2a0538e8a6220918e74d851f2b695726bcfecf4f1b1d41c45c0",
+    "final18_xlsx_sha256": "6889c19aa965bcf71c9e60516317141340756a57a724a93659f2469d7a46eaeb",
+    "slope_stats_dbf_sha256": "5ef96d886b72c4a38b5f3a2ffa3e78cf91db199d8621c5d2f497c8ae8b4d6c22"
+  },
+  "missing_slope_features": [
+    {
+      "source_fid": 18,
+      "osm_id": "183272312",
+      "name": "청파로",
+      "feature_length_m": 48.77
+    },
+    {
+      "source_fid": 19,
+      "osm_id": "183272448",
+      "name": "청파로",
+      "feature_length_m": 28.31
+    },
+    {
+      "source_fid": 323,
+      "osm_id": "386023650",
+      "name": null,
+      "feature_length_m": 17.01
+    },
+    {
+      "source_fid": 736,
+      "osm_id": "1113247892",
+      "name": "만리재로",
+      "feature_length_m": 16.76
+    },
+    {
+      "source_fid": 737,
+      "osm_id": "1113247893",
+      "name": "청파로",
+      "feature_length_m": 25.02
+    },
+    {
+      "source_fid": 757,
+      "osm_id": "1201492606",
+      "name": null,
+      "feature_length_m": 20.23
+    },
+    {
+      "source_fid": 758,
+      "osm_id": "1201492607",
+      "name": null,
+      "feature_length_m": 41.67
+    },
+    {
+      "source_fid": 759,
+      "osm_id": "1201492608",
+      "name": null,
+      "feature_length_m": 38.75
+    },
+    {
+      "source_fid": 760,
+      "osm_id": "1201492609",
+      "name": null,
+      "feature_length_m": 22.14
+    },
+    {
+      "source_fid": 761,
+      "osm_id": "1201492610",
+      "name": null,
+      "feature_length_m": 28.07
+    },
+    {
+      "source_fid": 800,
+      "osm_id": "1235856581",
+      "name": null,
+      "feature_length_m": 6.75
+    },
+    {
+      "source_fid": 801,
+      "osm_id": "1235856582",
+      "name": null,
+      "feature_length_m": 7.22
+    },
+    {
+      "source_fid": 802,
+      "osm_id": "1235856583",
+      "name": null,
+      "feature_length_m": 8.44
+    },
+    {
+      "source_fid": 2847,
+      "osm_id": "634546850",
+      "name": null,
+      "feature_length_m": 36.54
+    },
+    {
+      "source_fid": 2848,
+      "osm_id": "634546856",
+      "name": "횡단보도",
+      "feature_length_m": 8.13
+    },
+    {
+      "source_fid": 2858,
+      "osm_id": "634554557",
+      "name": "횡단보도",
+      "feature_length_m": 9.17
+    },
+    {
+      "source_fid": 2859,
+      "osm_id": "634554559",
+      "name": null,
+      "feature_length_m": 38.2
+    },
+    {
+      "source_fid": 4053,
+      "osm_id": "1212097849",
+      "name": "동작대로",
+      "feature_length_m": 6.97
+    }
+  ],
+  "blocked_edges": [
+    {
+      "edge_id": "2334-0",
+      "source_fid": 2334,
+      "osm_id": "464445125",
+      "name": "이촌로",
+      "length_m": 363.06,
+      "coordinates": [
+        [126.9927, 37.51928],
+        [126.9914902, 37.5183168],
+        [126.9910732, 37.5180205],
+        [126.99064, 37.51775],
+        [126.99022, 37.51752],
+        [126.98975, 37.51734],
+        [126.9895114, 37.5172665]
+      ]
+    },
+    {
+      "edge_id": "1366-0",
+      "source_fid": 1366,
+      "osm_id": "246253102",
+      "name": "서빙고지하차도",
+      "length_m": 121.12,
+      "coordinates": [
+        [126.9927, 37.51928],
+        [126.9927957, 37.5193882],
+        [126.9928453, 37.519544],
+        [126.9928069, 37.5197269],
+        [126.9926881, 37.519872],
+        [126.9924699, 37.5199738],
+        [126.9921796, 37.5200307]
+      ]
+    },
+    {
+      "edge_id": "1365-0",
+      "source_fid": 1365,
+      "osm_id": "246253101",
+      "name": null,
+      "length_m": 134.39,
+      "coordinates": [
+        [126.9921796, 37.5200307],
+        [126.9916784, 37.5200855],
+        [126.990903, 37.5201957],
+        [126.9906787, 37.5202215]
+      ]
+    },
+    {
+      "edge_id": "1109-0",
+      "source_fid": 1109,
+      "osm_id": "37403232",
+      "name": "서빙고로51길",
+      "length_m": 10.83,
+      "coordinates": [
+        [126.9906657, 37.5201245],
+        [126.9906787, 37.5202215]
+      ]
+    }
+  ],
+  "blocked_reason": "팀 추천 2 지도 검증: 6~9번 코너 보행로 없음. 동일 4.70km / 비용 5399 경로와 좌표를 대조하여 해당 간선만 임시 제외. 현장 독립 검증 아님.",
+  "remaining_review": "추천 1의 39번, 추천 3의 14번 코너 및 다른 구간은 보행 가능 판정 미완료."
+}

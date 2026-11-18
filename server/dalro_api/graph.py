@@ -17,6 +17,7 @@ from . import pace
 from .config import FACILITY_BUFFER_M, PACE_ALPHA, PACE_EXCLUDED_FCLASS, SNAP_RADIUS_M
 from .geo import Position, slope_pct, to_lonlat, to_xy
 from .models import Facility, NetworkVersion, Place, RoadEdge, ServiceArea
+from .quality_review import blocked_edge, missing_slope, review_for
 
 
 @dataclass
@@ -58,6 +59,8 @@ class RoadGraph:
     component: list[int]
     facilities: dict[str, shapely.STRtree]
     stats: dict = field(default_factory=dict)
+    base_version: str | None = None
+    quality_review: dict = field(default_factory=dict)
     service_area: shapely.Geometry | None = None
     service_area_name: str = "서울 용산구"
     places: list[tuple[str, str, str, Position]] = field(default_factory=list)  # 이름·분류·주소·위치
@@ -65,11 +68,12 @@ class RoadGraph:
     _vertex_ref: list[tuple[int, int]] = field(default_factory=list)
 
     @classmethod
-    def load(cls, session: Session) -> "RoadGraph":
+    def load(cls, session: Session, *, apply_review: bool = True) -> "RoadGraph":
         network = session.scalar(select(NetworkVersion).where(NetworkVersion.is_active))
         if network is None:
             raise LookupError("임포트한 도로망이 없습니다. python -m dalro_api.importer를 실행하세요.")
         rows = session.scalars(select(RoadEdge).where(RoadEdge.version == network.version)).all()
+        review = review_for(network.version) if apply_review else None
         index: dict[str, int] = {}
         nodes_xy: list[Position] = []
         nodes_lonlat: list[Position] = []
@@ -82,20 +86,30 @@ class RoadGraph:
             return index[node_id]
 
         edges = []
+        restored_fids: set[int] = set()
+        restored_edges = 0
+        excluded: list[str] = []
         for row in sorted(rows, key=lambda r: r.edge_id):
             u = node(row.from_node, row.coords_xy[0], row.coords_lonlat[0])
             v = node(row.to_node, row.coords_xy[-1], row.coords_lonlat[-1])
+            unmeasured = missing_slope(review, row.source_fid, row.osm_id)
+            if unmeasured:
+                restored_fids.add(row.source_fid)
+                restored_edges += 1
+            excluded_here = blocked_edge(review, row.edge_id)
+            if excluded_here:
+                excluded.append(row.edge_id)
             edges.append(
                 Edge(
                     edge_id=row.edge_id,
                     u=u,
                     v=v,
                     length=row.length_m,
-                    penalty=pace.penalty(row.stop_norm, row.slope_norm),
-                    allowed=row.walkable and row.fclass not in PACE_EXCLUDED_FCLASS,
+                    penalty=pace.penalty(row.stop_norm, None if unmeasured else row.slope_norm),
+                    allowed=row.walkable and row.fclass not in PACE_EXCLUDED_FCLASS and not excluded_here,
                     name=row.name,
                     fclass=row.fclass,
-                    slope_pct=slope_pct(row.slope_deg),
+                    slope_pct=None if unmeasured else slope_pct(row.slope_deg),
                     lonlat=[tuple(p) for p in row.coords_lonlat],
                     xy=[tuple(p) for p in row.coords_xy],
                 )
@@ -107,15 +121,22 @@ class RoadGraph:
             ).all()
             facilities[kind] = shapely.STRtree(shapely.from_wkb(blobs)) if blobs else None
         graph = cls(
-            version=network.version,
-            sources=network.sources,
+            version=review["effective_network_version"] if review else network.version,
+            base_version=network.version,
+            sources=network.sources + ([{"layer": "quality_review", "source": review["evidence"]["notion"],
+                                        "license": "팀 검토 · " + review["review_id"]}] if review else []),
             nodes_xy=nodes_xy,
             nodes_lonlat=nodes_lonlat,
             edges=edges,
             adj=[],
             component=[],
             facilities=facilities,
+            quality_review=({"review_id": review["review_id"], "missing_slope_features": len(restored_fids),
+                             "missing_slope_edges": restored_edges, "excluded_edge_ids": sorted(excluded)} if review else {}),
         )
+        if review and (len(restored_fids) != len(review["missing_slope_features"])
+                       or len(excluded) != len(review["blocked_edges"])):
+            raise ValueError("검토표의 원본 버전·fid·osm_id·edge_id가 서버 도로망과 일치하지 않습니다.")
         area = session.scalar(select(ServiceArea).where(ServiceArea.version == network.version))
         if area is not None:
             graph.service_area = shapely.from_wkb(area.wkb)

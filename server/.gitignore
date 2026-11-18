@@ -6,3 +6,4 @@ data/raw/
 data/*.sqlite3*
 data/export/
 data/corrupt-*/
+data/audit-*/

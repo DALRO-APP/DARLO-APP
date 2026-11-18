@@ -18,6 +18,7 @@ from pyproj import CRS, Transformer
 from shapely.ops import transform
 
 from .geo import gpkg_geometry
+from .quality_review import missing_slope, review_for
 from .importer import (
     LIGHT_MEMBER, LIGHT_ZIP, ROADS_MEMBER, ROADS_ZIP, SIGNAL_ZIP,
     extract, read_districts, read_features,
@@ -71,11 +72,14 @@ def main():
             return "M" + "L".join(f"{x:.1f},{y:.1f}" for x, y in geom.coords)
 
         road_file = extract(raw / ROADS_ZIP, {ROADS_MEMBER}, tmp)[ROADS_MEMBER]
+        base_version = "yongsan-verified-" + hashlib.sha256(road_file.read_bytes()).hexdigest()[:8]
+        review = review_for(base_version)
         features = read_features(road_file)
         roads = [[] for _ in range(4)]
         for feature in features:
             # 표시용 도로망이다. 통행 가능 여부는 추천 서버에서 판정한다.
-            pct = None if feature.slope_deg is None else math.tan(math.radians(feature.slope_deg)) * 100
+            pct = (None if feature.slope_deg is None or missing_slope(review, feature.fid, feature.osm_id)
+                   else math.tan(math.radians(feature.slope_deg)) * 100)
             bucket = 3 if pct is None else 0 if pct < 5 else 1 if pct < 10 else 2
             for part in feature.parts:
                 roads[bucket].append(path(local(shapely.LineString(part).simplify(2))))
@@ -130,7 +134,9 @@ def main():
         data = dict(
             schema_version="1.0", projection="EPSG:3857", origin=[west, north],
             width=round(width, 3), height=round(height, 3),
-            network_version="yongsan-verified-" + hashlib.sha256(road_file.read_bytes()).hexdigest()[:8],
+            network_version=review["effective_network_version"] if review else base_version,
+            base_network_version=base_version,
+            quality_review=None if review is None else review["review_id"],
             dem_crs_wkt=dem_crs.to_wkt(), source_sha256=sources,
             road_count=len(features), park_count=len(parks),
             roads=["".join(group) for group in roads], parks="".join(parks),

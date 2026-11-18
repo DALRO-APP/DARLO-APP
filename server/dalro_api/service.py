@@ -11,6 +11,7 @@ from .graph import Overlay, RoadGraph
 from .models import RecommendationLog, StoredCourse
 from .routing import loop_candidates, straight_candidates
 from .schemas import Course, LoopRequest, StraightRequest
+from .quality_review import course_needs_refresh
 
 
 class UnsupportedPurpose(Exception):
@@ -100,6 +101,8 @@ class RecommendationService:
             if stored is None:
                 return None
             course = dict(stored.payload)
+            if course_needs_refresh(course):
+                return None
             # 이전 저장 코스도 같은 도로망 버전이면 위치 정보를 덧붙여 응답한다.
             if course["data_version"] == self.graph.version:
                 route = shapely.LineString(to_xy(course["geometry"]["coordinates"]))

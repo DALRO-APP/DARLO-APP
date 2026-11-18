@@ -71,6 +71,8 @@ def create_app(
         return {
             "status": "ok",
             "data_version": graph.version,
+            "base_data_version": graph.base_version or graph.version,
+            "quality_review": graph.quality_review,
             "edges": len(graph.edges),
             "nodes": len(graph.nodes_xy),
             "purposes": ["PACE"],

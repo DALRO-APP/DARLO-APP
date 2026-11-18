@@ -13,7 +13,6 @@ from sqlalchemy import select
 
 from .config import FACILITY_BUFFER_M
 from .db import init_db, make_engine, session_factory
-from .geo import slope_pct
 from .graph import RoadGraph
 from .models import NetworkVersion, RoadEdge
 from .schemas import LoopRequest, StraightRequest
@@ -52,21 +51,23 @@ def export(out: Path, database_url: str | None = None) -> None:
         network = session.scalar(select(NetworkVersion).where(NetworkVersion.is_active))
         rows = session.scalars(select(RoadEdge).where(RoadEdge.version == network.version)).all()
         graph = RoadGraph.load(session)
+    by_id = {edge.edge_id: edge for edge in graph.edges}
     out.mkdir(parents=True, exist_ok=True)
     write(
         out / "manifest.json",
         {
             "schema_version": "1.0",
-            "data_version": network.version,
+            "data_version": graph.version,
             "region": network.region,
             "geometry_crs": "EPSG:4326",
             "analysis_crs": network.source_crs,
-            "network_version": network.version,
+            "network_version": graph.version,
+            "base_network_version": network.version,
             "edge_count": len(rows),
             "is_mock": False,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "contributors": ["김유진", "김시원", "유경수", "김진"],
-            "sources": [{**s, "observed_at": None} for s in network.sources],
+            "sources": [{**s, "observed_at": None} for s in graph.sources],
             "processing": {
                 "signal_buffer_m": FACILITY_BUFFER_M,
                 "light_buffer_m": FACILITY_BUFFER_M,
@@ -76,6 +77,7 @@ def export(out: Path, database_url: str | None = None) -> None:
                 "slope_pct는 도로 구역 평균 지형 경사(°)를 %로 변환한 값이며 노면 경사보다 클 수 있다. "
                 "미군기지 내부 추정 도로는 walkable=false.",
                 "quality": network.quality,
+                "quality_review": graph.quality_review,
             },
         },
     )
@@ -92,9 +94,9 @@ def export(out: Path, database_url: str | None = None) -> None:
                         "from_node": row.from_node,
                         "to_node": row.to_node,
                         "length_m": row.length_m,
-                        "walkable": row.walkable,
+                        "walkable": row.walkable and row.edge_id not in graph.quality_review.get("excluded_edge_ids", []),
                         "bidirectional": True,
-                        "slope_pct": None if row.slope_deg is None else round(slope_pct(row.slope_deg), 2),
+                        "slope_pct": None if by_id[row.edge_id].slope_pct is None else round(by_id[row.edge_id].slope_pct, 2),
                         "elevation_gain_forward_m": None,
                         "elevation_gain_reverse_m": None,
                         "signal_cnt": row.signal_cnt,
@@ -102,7 +104,7 @@ def export(out: Path, database_url: str | None = None) -> None:
                         "light_cnt": row.light_cnt,
                         "park_dist_m": None,
                         "green_ratio": None,
-                        "data_version": network.version,
+                        "data_version": graph.version,
                     },
                 }
                 for row in rows
@@ -116,7 +118,7 @@ def export(out: Path, database_url: str | None = None) -> None:
     ):
         write(out / request_file, request)
         write(out / response_file, service.recommend(model.model_validate(request)))
-    print(f"{out}: 도로 {len(rows)}개 · {network.version}")
+    print(f"{out}: 도로 {len(rows)}개 · {graph.version}")
 
 
 def main() -> None:

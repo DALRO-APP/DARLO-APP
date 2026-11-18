@@ -13,6 +13,7 @@ import {
 import { MOCK_PLACE_ID, makeMockCourse, parsePlaceId } from "../data/mock";
 import { searchDemoPlaces } from "../data/places";
 import { CourseCache } from "./course-cache";
+import { courseReviewIssue } from "../domain/course-review";
 
 export interface CourseRepository {
   recommend(
@@ -159,6 +160,8 @@ export class HttpCourseRepository implements CourseRepository {
       }),
       valid,
     );
+    const issue = response.courses.map(courseReviewIssue).find(Boolean);
+    if (issue) throw new Error(issue);
     await this.cache.remember(response.courses);
     return response;
   }
@@ -168,6 +171,8 @@ export class HttpCourseRepository implements CourseRepository {
     const course = courseSchema.parse(
       await this.request(`/v1/courses/${encodeURIComponent(id)}`, { signal }),
     );
+    const issue = courseReviewIssue(course);
+    if (issue) throw new Error(issue);
     await this.cache.remember([course]);
     return course;
   }

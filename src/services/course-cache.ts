@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { courseSchema, type Course } from "../domain/contracts";
+import { courseReviewIssue } from "../domain/course-review";
 
 type Storage = Pick<typeof AsyncStorage, "getItem" | "setItem">;
 const limit = 24;
@@ -24,7 +25,9 @@ export class CourseCache {
       return raw
         .flatMap((value) => {
           const course = courseSchema.safeParse(value);
-          return course.success ? [course.data] : [];
+          return course.success && !courseReviewIssue(course.data)
+            ? [course.data]
+            : [];
         })
         .slice(-limit);
     } catch {

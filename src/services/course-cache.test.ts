@@ -32,6 +32,25 @@ function storage() {
   };
 }
 describe("일시적인 서버 저장과 독립적인 코스 상세", () => {
+  it("검토에서 보행 불가로 확인된 코스는 구버전 캐시에서 다시 실행하지 않는다", async () => {
+    const disk = storage();
+    const rejected = {
+      ...realCourse,
+      data_version: "yongsan-verified-988cb48a",
+      edge_ids: ["1366-0"],
+    };
+    await disk.setItem(
+      "dalro-server-courses-v1:review",
+      JSON.stringify([rejected]),
+    );
+    expect(
+      await new CourseCache("review", disk).get(rejected.id),
+    ).toBeUndefined();
+    await new CourseCache("review", disk).remember([realCourse]);
+    expect(await new CourseCache("review", disk).get(realCourse.id)).toEqual(
+      realCourse,
+    );
+  });
   it("구버전 캐시의 경로는 유지하고 반올림된 점수를 패널티로 역산하지 않는다", async () => {
     const disk = storage();
     const { environment_penalty: _, ...summary } = realCourse.summary;
